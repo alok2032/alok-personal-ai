@@ -28,7 +28,7 @@ object StorageHelper {
     fun sanitizeFileName(rawName: String): String {
         val base = rawName.substringAfterLast("/").substringAfterLast("\\")
         val sanitized = base.replace(Regex("[^a-zA-Z0-9._-]"), "_").take(80)
-        return if (sanitized.isBlank()) "attachment_${System.currentTimeMillis()}.dat" else sanitized
+        return if (sanitized.trim('_').isBlank()) "attachment_${System.currentTimeMillis()}.dat" else sanitized
     }
 
     /**

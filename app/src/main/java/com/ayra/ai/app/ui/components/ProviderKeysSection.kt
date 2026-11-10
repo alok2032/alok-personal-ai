@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Key
@@ -145,6 +146,21 @@ fun ProviderKeysSection(
             onClear = { AyraPreferences.setElevenLabsKey(context, "") },
             onTest = { key -> ElevenLabsVoiceEngine(context).testConnection(key) }
         )
+
+        // Qwen 3.8 27B Uncensored (from Wassimyounes01/qwen38-uncensored)
+        SpecializedIntegrationKeyCard(
+            context = context,
+            title = "Qwen 3.8 27B Uncensored (Abliterated)",
+            description = "Weight-level abliterated 27B weights from Wassimyounes01/qwen38-uncensored. Answers all world questions without refusal.",
+            portalLabel = "HuggingFace GGUF",
+            portalUrl = "https://huggingface.co/orcarouter/Qwen3.8-27B-Uncensored-GGUF",
+            icon = Icons.Default.AutoAwesome,
+            initialKey = AyraPreferences.getCustomEndpointUrl(context),
+            placeholder = "http://10.0.2.2:11434 (Local Ollama / LAN)",
+            onSave = { AyraPreferences.setCustomEndpointUrl(context, it) },
+            onClear = { AyraPreferences.setCustomEndpointUrl(context, "") },
+            onTest = { endpoint -> com.ayra.ai.app.ai.qwen.Qwen38UncensoredEngine(context).testConnection(endpoint) }
+        )
     }
 }
 
@@ -161,6 +177,7 @@ fun AiRoutingAndMemoryCard(context: Context) {
             Triple("auto", "Auto ⚡", "Adaptive selection"),
             Triple("quality", "Best Quality 👑", "Gemini 2.5 Pro / Claude 3.7"),
             Triple("fast", "Ultra Fast 🚀", "Gemini 2.5 Flash / 4o Mini"),
+            Triple("qwen_uncensored", "Qwen 3.8 🔓", "Abliterated 27B — Zero Refusals"),
             Triple("reasoning", "Deep Reasoning 🧠", "DeepSeek R1 / o3-mini"),
             Triple("coding", "Coding & STEM 💻", "Claude 3.7 / Codestral"),
             Triple("local", "Private LAN 🏠", "Local Ollama / LM Studio")

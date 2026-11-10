@@ -51,7 +51,8 @@ enum class AiRoutingMode(val id: String, val title: String, val icon: String, va
     REASONING("reasoning", "Deep Reasoning", "🧠", "Chain-of-thought verification (DeepSeek R1, o3-mini, Gemini 2.5 Pro)"),
     CODING("coding", "Software & Coding", "💻", "Architectural coding specialist (Claude 3.7 Sonnet, Codestral, Qwen 2.5 Coder)"),
     PRIVACY_LOCAL("local", "Private / Local LAN", "🏠", "Zero-cloud private local LLM running on LAN/Ollama"),
-    COST_EFFICIENT("cost", "Cost Efficient / Free", "🌱", "Zero-cost or lowest token consumption routes")
+    COST_EFFICIENT("cost", "Cost Efficient / Free", "🌱", "Zero-cost or lowest token consumption routes"),
+    QWEN_UNCENSORED("qwen_uncensored", "Qwen 3.8 Uncensored", "🔓", "Abliterated 27B weights — zero refusal answers to any question in the world")
 }
 
 data class ProviderResponse(
@@ -143,7 +144,9 @@ class ExternalAiProviders(private val context: Context? = null) {
             AiModelInfo("qwen/qwen-2.5-72b-instruct", "Qwen 2.5 72B Instruct 🐉", AiProviderType.OPENROUTER, "Top multilingual, STEM & reasoning model", "128k tokens", false, false, false),
             AiModelInfo("qwen/qwen-2.5-coder-32b-instruct", "Qwen 2.5 Coder 32B 💻", AiProviderType.OPENROUTER, "Elite coding and bug-fixing specialist", "128k tokens", false, false, false),
 
-            // Local Ollama
+            // Local Ollama & Qwen 3.8 Uncensored (from Wassimyounes01/qwen38-uncensored)
+            AiModelInfo("orcarouter/Qwen3.8-27B-Uncensored:q4_k_m", "Qwen 3.8 27B Uncensored 🔓", AiProviderType.LOCAL_OLLAMA, "Abliterated 27B weights — zero refusal answers to any question", "262k tokens", true, true, true),
+            AiModelInfo("qwen3.8:27b-uncensored", "Qwen 3.8 Uncensored (Ollama Tag) 🔓", AiProviderType.LOCAL_OLLAMA, "Abliterated Qwen 3.8 27B serving tag on Ollama", "8k tokens", false, true, false),
             AiModelInfo("llama3.3", "Local Ollama / LM Studio 🏠", AiProviderType.LOCAL_OLLAMA, "Zero-cloud private local LLM running on your device/LAN", "8k+ tokens", false, false, false)
         )
     }
@@ -880,6 +883,11 @@ class ExternalAiProviders(private val context: Context? = null) {
                 if (configured.contains(AiProviderType.GEMINI)) Pair(AiProviderType.GEMINI, "gemini-2.5-flash")
                 else if (configured.contains(AiProviderType.OPENAI)) Pair(AiProviderType.OPENAI, "gpt-4o-mini")
                 else Pair(AiProviderType.KEYLESS_COMMUNITY, "openai")
+            }
+            AiRoutingMode.QWEN_UNCENSORED -> {
+                if (configured.contains(AiProviderType.LOCAL_OLLAMA)) Pair(AiProviderType.LOCAL_OLLAMA, "orcarouter/Qwen3.8-27B-Uncensored:q4_k_m")
+                else if (configured.contains(AiProviderType.OPENROUTER)) Pair(AiProviderType.OPENROUTER, "qwen/qwen-2.5-72b-instruct")
+                else Pair(AiProviderType.LOCAL_OLLAMA, "qwen3.8:27b-uncensored")
             }
             AiRoutingMode.AUTO -> {
                 val best = getBestAvailableProvider()

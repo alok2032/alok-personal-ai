@@ -195,10 +195,24 @@ class VoiceAssistantManager(
 
         setupVoiceModulation(locale, targetSentiment)
 
-        val params = Bundle().apply {
-            putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "AyraSweetVoice_${System.currentTimeMillis()}")
+        // Split text into natural sentence chunks to avoid TTS buffer overflow and ensure smooth delivery
+        val sentenceDelimiters = Regex("(?<=[।!?\\n])\\s+|(?<=\\.)\\s+")
+        val chunks = cleaned.split(sentenceDelimiters).filter { it.isNotBlank() }
+
+        if (chunks.isEmpty()) {
+            val params = Bundle().apply {
+                putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "AyraSweetVoice_${System.currentTimeMillis()}")
+            }
+            tts?.speak(cleaned, TextToSpeech.QUEUE_FLUSH, params, "AyraSweetVoice")
+        } else {
+            for ((index, chunk) in chunks.withIndex()) {
+                val queueMode = if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
+                val params = Bundle().apply {
+                    putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "AyraSweetVoice_${System.currentTimeMillis()}_$index")
+                }
+                tts?.speak(chunk.trim(), queueMode, params, "AyraSweetVoice_$index")
+            }
         }
-        tts?.speak(cleaned, TextToSpeech.QUEUE_FLUSH, params, "AyraSweetVoice")
     }
 
     /**

@@ -419,6 +419,14 @@ fun ControlCenterSheet(
                 }
             }
 
+            // Superpowers Protocol Suite (obra/superpowers integration)
+            SuperpowersSuiteCard(
+                onSelectSuperpowerPrompt = { prompt ->
+                    onSelectPrompt(prompt)
+                    onDismiss()
+                }
+            )
+
             HorizontalDivider(color = Color(0x2200FFFF), thickness = 0.8.dp)
 
             // Section 1c: Cyber Shield & WireGuard VPN Suite

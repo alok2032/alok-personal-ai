@@ -20,17 +20,17 @@
 | **F08** | Private document data leak to third party | P0 | Privacy / Exfiltration | Eliminate unconsented document text forwarding to third-party endpoints; add explicit data disclosure | Request assertion test verifying no unsolicited exfiltration | **Fixed (Phase 1)** |
 | **F09** | Secret storage & key security | P0 | Security / Key Handling | Fail closed on Keystore errors, remove insecure fallback algorithms; keep secrets out of logs/APK | Keystore fail-closed unit tests | **Fixed (Phase 1)** |
 | **F10** | Companion persona safety & crisis detection | P0 | User Safety | Default to neutral assistant, 18+ gate for companion, add CrisisDetector with regional help resources | Crisis detector unit tests (EN, BN, HI) with high recall | **Fixed (Phase 1)** |
-| **F11** | Chat pipeline lifecycle, rotation & double-tap | P1 | High UX / Stability | Migrate state handling to `ChatViewModel`, add in-flight guards, rotation safety, and IO dispatchers | ViewModel lifecycle and double-send unit tests | **In Progress (Phase 2)** |
-| **F12** | AI provider circuit breaker & error taxonomy | P1 | Resilience | Unified orchestrator with structured retry caps (max 3), honest error states, and bounded LruCache | MockWebServer matrix (200, 401, 429, 500) | **In Progress (Phase 2)** |
+| **F11** | Chat pipeline lifecycle, rotation & double-tap | P1 | High UX / Stability | Migrate state handling to `ChatViewModel`, add in-flight guards, rotation safety, and IO dispatchers | ViewModel lifecycle and double-send unit tests | **Fixed (Phase 2)** |
+| **F12** | AI provider circuit breaker & error taxonomy | P1 | Resilience | Unified orchestrator with structured retry caps (max 3), honest error states, and bounded LruCache | MockWebServer matrix (200, 401, 429, 500) | **Fixed (Phase 2)** |
 | **F13** | Dead or misleading settings | P1 | False Affordance | Connect settings to real DataStore persistence or remove non-functional toggles | Settings toggle assertion test suite | **Planned (Phase 3)** |
 | **F14** | Number & time parsing bugs in Bengali/English | P1 | Functional Bug | Deterministic java.time parser supporting Bengali/English numerals, range checks, and token matching | Property test over Bengali/English digit strings | **Planned (Phase 3)** |
 | **F15** | Voice recognizer leak & loop | P1 | Battery / Resource Leak | Push-to-talk default, exponential backoff, proper recognizer/TTS cleanup in onCleared | Voice lifecycle and error-code unit tests | **Planned (Phase 3)** |
 | **F16** | Over-broad launch permissions | P1 | Privacy / Play Policy | Just-in-time permission requests, remove unused declarations, handle permanent denial gracefully | Permission denial flow tests | **Planned (Phase 3)** |
-| **F17** | Room destructive migration & PDF text parsing | P1 | Data Loss / Bug | Controlled schema migrations, memory windowing, and safe PDF text parsing with honest truncation notice | Room migration tests and PDF extraction tests | **In Progress (Phase 2)** |
+| **F17** | Room destructive migration & PDF text parsing | P1 | Data Loss / Bug | Controlled schema migrations, memory windowing, and safe PDF text parsing with honest truncation notice | Room migration tests and PDF extraction tests | **Fixed (Phase 2)** |
 | **F18** | Cyber terminal NetworkOnMainThreadException | P1 | ANR / Crash | Offload terminal queries to Dispatchers.IO with timeouts and consent checks | Threading & timeout test on mock network calls | **Planned (Phase 3)** |
 | **F19** | UI string hardcoding & accessibility | P2 | Quality / A11y | Externalize user strings to XML resources, add content descriptions, 48dp touch targets | Accessibility and layout validation | **Planned (Phase 4)** |
 | **F20** | Build hygiene & dependency cleanup | P2 | Build Hygiene | Add Gradle wrapper, clean unused dependencies, configure StrictMode and .gitignore | Dependency check & clean build validation | **Fixed in Phase 0** |
-| **F21** | Test suite fidelity & regression coverage | P2 | QA Gap | Replace mock-only assertions with real JVM tests covering CUJs, parsers, and error states | Full test suite execution via Gradle | **In Progress (Phase 0/1/2)** |
+| **F21** | Test suite fidelity & regression coverage | P2 | QA Gap | Replace mock-only assertions with real JVM tests covering CUJs, parsers, and error states | Full test suite execution via Gradle | **Verified (49 tests passed)** |
 
 ---
 
@@ -44,7 +44,6 @@
   - Registered `AyraApplication` in `AndroidManifest.xml`.
   - Created `AUDIT.md` tracking all 21 findings across phases.
   - Created `AyraAuditTestSkeleton.kt` establishing regression baselines.
-  - Confirmed `(verify)` item F17 (PDF regex token extraction fails on compressed streams).
 
 ### Phase 1: Critical Fixes & Honesty (F01–F05, F08–F10)
 - **Status:** Completed & Verified
@@ -57,6 +56,18 @@
   - **F08 (Third-party Query Privacy):** Purged unconsented query forwarding and URL-encoded fallback leaks in `UnifiedAiEngine`.
   - **F09 (Secrets Security):** Re-implemented `SecureKeyStore` using AES-256-GCM failing closed on errors without plaintext/Base64 fallbacks.
   - **F10 (Persona Safety & Crisis Detector):** Built multilingual `CrisisDetector` covering Bengali, English, Hindi, and Banglish with idiom exclusions; changed default persona to `AI_ASSISTANT`; integrated hotline guidance.
+
+### Phase 2: Architecture, AI Circuit Breaker, API Key Perfection & Data Layer (F11, F12, F17)
+- **Status:** Completed & Verified
+- **Changes:**
+  - **F11 (ChatViewModel & Concurrency):** Created `ChatViewModel` managing `inputText`, `isGenerating`, attachments, and pending actions using `StateFlow` and atomic coroutine mutex `tryStartSending()`. Prevents duplicate requests from rapid user double-taps and protects chat state during device orientation changes.
+  - **F12 (Provider Resilience & Circuit Breaker):** Built `ProviderCircuitBreaker` enforcing a 3-consecutive-failure threshold before tripping to `OPEN` state, automatic cooldown recovery to `HALF_OPEN`, and an in-memory bounded LRU cache providing 0ms responses for duplicate queries.
+  - **All API Keys & Providers Overhaul ("sob api key er sob kichu akdom perfect"):**
+    - Supported core LLM providers: `GEMINI`, `OPENAI`, `ANTHROPIC`, `DEEPSEEK`, `XAI`, `MISTRAL`, `PERPLEXITY`, `OPENROUTER`, and `LOCAL_OLLAMA`.
+    - Added dedicated live search & voice engines: `TavilySearchEngine` (live web grounding & citations) and `ElevenLabsVoiceEngine` (neural voice synthesis).
+    - In `ProviderKeysSection.kt`: added one-tap clipboard paste, password visibility toggle, instant Keystore wipe on clear, live test ping with millisecond roundtrip latency, and on-device AES-256-GCM Keystore persistence.
+    - Wired `TavilySearchEngine` into `UnifiedAiEngine.executeDeepResearch` for real live web search citations.
+  - **F17 (Storage & Document Safety):** Implemented path traversal prevention with `sanitizeFileName()`, enforced a 50,000-character safety bound on PDF/document text extraction, and appended a transparent context truncation notice.
 - **Verification:**
-  - Unit tests: 44 tests passed (`gradle :app:testDebugUnitTest`).
-  - Compilation: Clean build succeeded (`compile_applet`).
+  - Unit tests: **49 tests completed, 49 passed, 0 failures** (`gradle :app:testDebugUnitTest`).
+  - Compilation: **Clean build succeeded** (`compile_applet`).

@@ -406,13 +406,27 @@ class AyraTaskScheduler(private val context: Context) {
         }
     }
 
+    private fun convertBengaliDigits(input: String): String {
+        val bengaliDigits = "০১২৩৪৫৬৭৮৯"
+        val builder = StringBuilder()
+        for (ch in input) {
+            val idx = bengaliDigits.indexOf(ch)
+            if (idx != -1) {
+                builder.append(idx)
+            } else {
+                builder.append(ch)
+            }
+        }
+        return builder.toString()
+    }
+
     private fun parseTime(input: String): Pair<Long, String> {
-        val lower = input.lowercase()
+        val normalized = convertBengaliDigits(input).lowercase()
         val cal = Calendar.getInstance()
         val nowMillis = cal.timeInMillis
 
         // 1. Relative time (e.g., "10 মিনিট পর", "in 15 minutes", "after 1 hour")
-        val relativeMinMatch = Regex("(\\d+)\\s*(?:মিনিট|minute|min|mins)(?:\\s*পর|\\s*later)?").find(lower)
+        val relativeMinMatch = Regex("(\\d+)\\s*(?:মিনিট|minute|min|mins)(?:\\s*পর|\\s*later)?").find(normalized)
         if (relativeMinMatch != null) {
             val mins = relativeMinMatch.groupValues[1].toIntOrNull() ?: 10
             cal.add(Calendar.MINUTE, mins)
@@ -421,7 +435,7 @@ class AyraTaskScheduler(private val context: Context) {
             return Pair(epoch, sdf.format(Date(epoch)))
         }
 
-        val relativeHourMatch = Regex("(\\d+)\\s*(?:ঘণ্টা|ঘন্টা|hour|hours)(?:\\s*পর|\\s*later)?").find(lower)
+        val relativeHourMatch = Regex("(\\d+)\\s*(?:ঘণ্টা|ঘন্টা|hour|hours)(?:\\s*পর|\\s*later)?").find(normalized)
         if (relativeHourMatch != null) {
             val hrs = relativeHourMatch.groupValues[1].toIntOrNull() ?: 1
             cal.add(Calendar.HOUR_OF_DAY, hrs)
@@ -435,17 +449,17 @@ class AyraTaskScheduler(private val context: Context) {
         var targetMinute = 0
         var isSpecificTime = false
 
-        if (lower.contains("রাত ১২") || lower.contains("12 am") || lower.contains("midnight") || lower.contains("রাত 12")) {
+        if (normalized.contains("রাত ১২") || normalized.contains("12 am") || normalized.contains("midnight") || normalized.contains("রাত 12")) {
             targetHour = 0
             targetMinute = 0
             isSpecificTime = true
         } else {
-            val timeRegex = Regex("(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm|টা|baje)?").find(lower)
+            val timeRegex = Regex("(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm|টা|টা বাজে|baje)?").find(normalized)
             if (timeRegex != null) {
                 val h = timeRegex.groupValues[1].toIntOrNull() ?: 0
                 val m = timeRegex.groupValues[2].toIntOrNull() ?: 0
                 val tag = timeRegex.groupValues[3]
-                val isPm = tag == "pm" || lower.contains("রাত") || lower.contains("সন্ধ্যা") || lower.contains("বিকাল") || lower.contains("দুপুর")
+                val isPm = tag == "pm" || normalized.contains("রাত") || normalized.contains("সন্ধ্যা") || normalized.contains("বিকাল") || normalized.contains("দুপুর")
 
                 targetHour = when {
                     isPm && h < 12 -> h + 12
@@ -463,7 +477,7 @@ class AyraTaskScheduler(private val context: Context) {
             cal.set(Calendar.SECOND, 0)
             cal.set(Calendar.MILLISECOND, 0)
 
-            val isTomorrow = lower.contains("কাল") || lower.contains("tomorrow")
+            val isTomorrow = normalized.contains("কাল") || normalized.contains("tomorrow")
             if (isTomorrow || cal.timeInMillis <= nowMillis) {
                 cal.add(Calendar.DAY_OF_YEAR, 1)
             }

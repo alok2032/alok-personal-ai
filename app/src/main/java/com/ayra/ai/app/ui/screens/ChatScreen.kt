@@ -202,6 +202,12 @@ fun ChatScreen(
     val isSpeaking by voiceManager.isSpeaking.collectAsState()
     val currentSentiment by voiceManager.currentSentiment.collectAsState()
 
+    androidx.compose.runtime.DisposableEffect(voiceManager) {
+        onDispose {
+            voiceManager.destroy()
+        }
+    }
+
     val allRequiredPermissions = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
         arrayOf(
             Manifest.permission.RECORD_AUDIO,

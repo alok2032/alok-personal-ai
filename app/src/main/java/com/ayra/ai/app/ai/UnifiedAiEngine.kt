@@ -74,6 +74,15 @@ enum class AiModelTier(
         reasoningLabel = "Very High 🧠",
         description = "সাবলীল বহুভাষিক সাহিত্য রচনা, অনুবাদ ও গভীর জ্ঞানভিত্তিক কথোপকথন",
         accentColorHex = 0xFFFFD700
+    ),
+    QWEN_UNCENSORED(
+        id = "qwen_uncensored",
+        displayName = "Qwen 3.8 27B Uncensored 🔓",
+        providerName = "Abliterated Zero-Refusal",
+        speedLabel = "Uncensored / Fast ⚡",
+        reasoningLabel = "Abliterated 27B 🔓",
+        description = "লেয়ার-৩৮ অর্থোগোনাল ডি-সেন্সর্ড মডেল — কোনো অস্বীকৃতি ছাড়া পৃথিবীর যেকোনো প্রশ্নের সৎ ও বিস্তারিত উত্তর",
+        accentColorHex = 0xFFFF5722
     )
 }
 
@@ -330,6 +339,12 @@ class UnifiedAiEngine(private val context: Context? = null) {
             return@withContext executeDeepResearch(cleanPrompt, effectivePrompt, attachedImageBase64)
         }
 
+        // 6c. Detect Superpowers Protocol Intent (obra/superpowers)
+        val superpower = com.ayra.ai.app.ai.superpowers.AyraSuperpowersEngine.detectSuperpower(cleanPrompt)
+        if (superpower != null) {
+            return@withContext executeSuperpowerAction(superpower, cleanPrompt, effectivePrompt, attachedImageBase64)
+        }
+
         val isBengali = cleanPrompt.any { it in '\u0980'..'\u09FF' }
         val isGfMode = currentPersona == "GF_COMPANION"
 
@@ -381,6 +396,7 @@ class UnifiedAiEngine(private val context: Context? = null) {
                 "gemini_pro" -> Pair(AiModelTier.GEMINI_PRO, "Gemini 2.5 Pro Deep Reasoning 🧠")
                 "deepseek_r1" -> Pair(AiModelTier.OPENROUTER_DEEPSEEK, "DeepSeek-R1 (Chain-of-Thought) 🧠")
                 "llama_3_3" -> Pair(AiModelTier.OPENROUTER_LLAMA, "Llama 3.3 70B Instruct 🌐")
+                "qwen_uncensored" -> Pair(AiModelTier.QWEN_UNCENSORED, "Qwen 3.8 27B Uncensored 🔓")
                 else -> determineOptimalModel(effectivePrompt)
             }
         }
@@ -436,6 +452,7 @@ class UnifiedAiEngine(private val context: Context? = null) {
                     AiModelTier.GEMINI_PRO -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.GEMINI, "gemini-2.5-pro")
                     AiModelTier.OPENROUTER_DEEPSEEK -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.OPENROUTER, "deepseek/deepseek-r1")
                     AiModelTier.OPENROUTER_LLAMA -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.OPENROUTER, "meta-llama/llama-3.3-70b-instruct")
+                    AiModelTier.QWEN_UNCENSORED -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.LOCAL_OLLAMA, "orcarouter/Qwen3.8-27B-Uncensored:q4_k_m")
                     else -> Pair(routedProvider, routedModel)
                 }
 
@@ -494,6 +511,15 @@ class UnifiedAiEngine(private val context: Context? = null) {
                 if (geminiApiKey.isNotBlank()) {
                     val res = queryGeminiFlash(effectivePrompt, attachedImageBase64)
                     if (res.isNotBlank()) return@withContext emitResponse(AiResponse(text = res, modelUsed = "Gemini 2.5 Flash Live ⚡"))
+                }
+            }
+
+            AiModelTier.QWEN_UNCENSORED -> {
+                if (context != null) {
+                    val qwenResp = com.ayra.ai.app.ai.qwen.Qwen38UncensoredEngine(context).queryQwen(effectivePrompt)
+                    if (qwenResp.text.isNotBlank()) {
+                        return@withContext emitResponse(AiResponse(text = qwenResp.text, modelUsed = qwenResp.modelUsed))
+                    }
                 }
             }
 
@@ -726,6 +752,61 @@ class UnifiedAiEngine(private val context: Context? = null) {
             text = report,
             craftType = "RESEARCH",
             modelUsed = "Ayra Deep Research Engine 🔬"
+        )
+    }
+
+    // --- 6c. Superpowers Protocol Engine (obra/superpowers) ---
+    private suspend fun executeSuperpowerAction(
+        superpower: com.ayra.ai.app.ai.superpowers.AyraSuperpowersEngine.SuperpowerType,
+        cleanPrompt: String,
+        effectivePrompt: String,
+        imageBase64: String?
+    ): AiResponse {
+        val isBengali = cleanPrompt.any { it in '\u0980'..'\u09FF' }
+        val systemPrompt = com.ayra.ai.app.ai.superpowers.AyraSuperpowersEngine.buildSuperpowerSystemPrompt(superpower, isBengali, context)
+
+        if (context != null && externalAiProviders.hasAnyConfiguredProvider()) {
+            try {
+                val providerResponse = externalAiProviders.generateChatResponse(
+                    prompt = effectivePrompt,
+                    systemPrompt = systemPrompt,
+                    imageBase64 = imageBase64,
+                    withSearchGrounding = true
+                )
+                if (providerResponse.text.isNotBlank()) {
+                    return AiResponse(
+                        text = providerResponse.text,
+                        modelUsed = "${superpower.displayName} (${providerResponse.modelUsed})"
+                    )
+                }
+            } catch (_: Exception) {}
+        } else if (geminiApiKey.isNotBlank()) {
+            try {
+                val res = queryGeminiModel("gemini-2.5-pro", "$systemPrompt\n\nUser Task:\n$effectivePrompt", imageBase64)
+                if (res.isNotBlank()) {
+                    return AiResponse(
+                        text = res,
+                        modelUsed = "${superpower.displayName} (Gemini 2.5 Pro 🔬)"
+                    )
+                }
+            } catch (_: Exception) {}
+            try {
+                val res = queryGeminiModel("gemini-2.5-flash", "$systemPrompt\n\nUser Task:\n$effectivePrompt", imageBase64)
+                if (res.isNotBlank()) {
+                    return AiResponse(
+                        text = res,
+                        modelUsed = "${superpower.displayName} (Gemini 2.5 Flash ⚡)"
+                    )
+                }
+            } catch (_: Exception) {}
+        }
+
+        val offlineResponse = com.ayra.ai.app.ai.superpowers.AyraSuperpowersEngine.generateOfflineSuperpowerResponse(
+            superpower, cleanPrompt, isBengali
+        )
+        return AiResponse(
+            text = offlineResponse,
+            modelUsed = "${superpower.displayName} (Autonomous Protocol)"
         )
     }
 

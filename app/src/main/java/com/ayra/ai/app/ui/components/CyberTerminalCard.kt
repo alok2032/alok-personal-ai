@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,18 +83,25 @@ fun CyberTerminalCard(
     }
     val listState = rememberLazyListState()
 
+    val scope = rememberCoroutineScope()
+    var isExecuting by remember { mutableStateOf(false) }
+
     // Execute initial command if provided
     LaunchedEffect(initialCommand) {
         if (!initialCommand.isNullOrBlank()) {
-            val result = CyberTerminalEngine.executeCommand(initialCommand)
+            isExecuting = true
+            val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                CyberTerminalEngine.executeCommand(initialCommand)
+            }
             history.add(result)
+            isExecuting = false
             listState.animateScrollToItem(history.size - 1)
         }
     }
 
     fun submitCommand(cmdToRun: String) {
         val trimmed = cmdToRun.trim()
-        if (trimmed.isEmpty()) return
+        if (trimmed.isEmpty() || isExecuting) return
 
         if (trimmed.lowercase() == "clear" || trimmed.lowercase() == "cls") {
             history.clear()
@@ -106,9 +115,15 @@ fun CyberTerminalCard(
             return
         }
 
-        val result = CyberTerminalEngine.executeCommand(trimmed)
-        history.add(result)
         inputCmd = ""
+        isExecuting = true
+        scope.launch {
+            val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                CyberTerminalEngine.executeCommand(trimmed)
+            }
+            history.add(result)
+            isExecuting = false
+        }
     }
 
     LaunchedEffect(history.size) {
