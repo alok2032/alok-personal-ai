@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Ayra Neon Glowing Sparkle / AI Core Icon -->
+    <path
+        android:fillColor="#00FFFF"
+        android:pathData="M54,20 L60,44 L84,54 L60,64 L54,88 L48,64 L24,54 L48,44 Z" />
+    <path
+        android:fillColor="#BF00FF"
+        android:pathData="M54,34 L57,50 L73,54 L57,58 L54,74 L51,58 L35,54 L51,50 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,48m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+</vector>

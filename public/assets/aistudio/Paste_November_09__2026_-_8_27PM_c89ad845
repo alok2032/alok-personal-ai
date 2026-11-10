@@ -1,0 +1,1168 @@
+# MASTER PROMPT — AYRA AI COMPLETE APP AUDIT, DEBUGGING, REBUILD & PRODUCTION OVERHAUL
+
+## ROLE & RESPONSIBILITY
+
+Act as a Principal Android Engineer, Senior Kotlin Developer, AI Systems Architect, Voice AI Engineer, Cybersecurity Engineer, UX/UI Designer, Database Architect, DevOps Engineer and Senior QA Automation Engineer.
+
+You are responsible for performing a complete forensic-level audit and production-grade overhaul of the entire existing Ayra AI Android application.
+
+Project: `alok-new-ai.zip`
+
+Package: `com.ayra.ai.app`
+
+Technology: Kotlin, Jetpack Compose, Android SDK, Room Database, Coroutines, OkHttp, Retrofit and multiple AI providers.
+
+Your mission is NOT to create a new application from scratch or simply redesign the interface.
+
+Your mission is to inspect, understand, debug, repair, improve and complete the EXISTING APPLICATION while preserving its identity, existing useful features, architecture and user experience.
+
+The final application must be a genuinely functional, reliable, secure, intelligent and production-ready AI assistant.
+
+**ABSOLUTE RULE: No fake features, no misleading UI, no hardcoded fake responses, no simulated success messages, no dummy actions, no non-functional buttons and no placeholder implementations presented as completed features.**
+
+---
+
+# PHASE 1 — COMPLETE PROJECT FORENSIC AUDIT
+
+First extract the complete ZIP archive.
+
+Inspect every directory, source file, configuration file, dependency, resource, XML, Kotlin class, test, build script and project-level configuration.
+
+Do not inspect only the main ChatScreen.
+
+Audit all files, including:
+
+- MainActivity.kt
+- AyraApplication.kt
+- AndroidManifest.xml
+- ChatScreen.kt
+- UnifiedAiEngine.kt
+- AutonomousKnowledgeEngine.kt
+- ExternalAiProviders.kt
+- GlobalWebKnowledgeGateway.kt
+- AiAgentOrchestrator.kt
+- AiAppAndCodeStudio.kt
+- BuildYourOwnXKnowledgeEngine.kt
+- VoiceAssistantManager.kt
+- AyraVoiceAnnouncer.kt
+- AyraAudioSynthesizer.kt
+- CrisisDetector.kt
+- SentimentDetector.kt
+- DeviceAutomationController.kt
+- AyraTaskScheduler.kt
+- ScheduledTaskReceiver.kt
+- ContactResolver.kt
+- ProposedAction.kt
+- ChatDatabase.kt
+- ChatDao.kt
+- ScheduledTaskDao.kt
+- StorageHelper.kt
+- SecureKeyStore.kt
+- CyberTerminalEngine.kt
+- AyraVpnPrivacyController.kt
+- ProviderKeysSection.kt
+- ControlCenterSheet.kt
+- ActionConfirmationCard.kt
+- SongPlayerCard.kt
+- VideoPlayerCard.kt
+- ThreeDModelCard.kt
+- SolarSystem3DCanvas.kt
+- PdfDocumentDownloadCard.kt
+- CyberTerminalCard.kt
+- All remaining UI components
+- All test files
+- All Gradle files
+- All resource files
+
+For every file, determine:
+
+1. What the file is responsible for.
+2. Whether its implementation is complete.
+3. Whether its methods actually work.
+4. Whether it is connected to the application.
+5. Whether another file duplicates its functionality.
+6. Whether it contains dead code.
+7. Whether it contains fake or simulated logic.
+8. Whether it has security vulnerabilities.
+9. Whether it creates memory leaks or performance problems.
+10. Whether it introduces crashes or incorrect results.
+11. Whether it has missing error handling.
+12. Whether its implementation follows Android best practices.
+
+Create a complete file-by-file audit report.
+
+Classify every finding:
+
+- CRITICAL
+- HIGH
+- MEDIUM
+- LOW
+
+Classify every feature:
+
+- REAL AND VERIFIED
+- PARTIALLY WORKING
+- SIMULATED
+- PLACEHOLDER
+- BROKEN
+- NOT IMPLEMENTED
+- NOT ACCESSIBLE
+
+Never assume that a feature works merely because its Kotlin class or UI component exists.
+
+# PHASE 2 — BUILD SYSTEM AND DEPENDENCY REPAIR
+
+Completely audit the Android build system.
+
+Inspect:
+
+- settings.gradle.kts
+- build.gradle.kts
+- app/build.gradle.kts
+- gradle.properties
+- gradle/libs.versions.toml
+- Gradle wrapper
+- Kotlin plugin versions
+- Android Gradle Plugin
+- KSP
+- Compose dependencies
+- Room dependencies
+- Retrofit and OkHttp
+- Coroutines
+- Android SDK compatibility
+
+Fix missing or empty configuration files.
+
+Ensure that all dependency aliases resolve correctly.
+
+Remove duplicate, unused, incompatible and unnecessary dependencies.
+
+Configure:
+
+- Reproducible Gradle builds
+- Correct SDK versions
+- Proper debug signing
+- Secure release signing
+- Release ProGuard/R8 rules
+- Build variants
+- BuildConfig
+- Environment configuration
+- Dependency version management
+
+Never use a debug keystore as a production release signing key.
+
+Do not embed production API secrets in the APK.
+
+Acceptance criteria:
+
+- Clean Gradle sync.
+- Successful clean build.
+- Successful debug APK generation.
+- Successful release build configuration.
+- No unresolved dependencies.
+- No unexplained compilation warnings or errors.
+
+# PHASE 3 — COMPLETE AI ENGINE OVERHAUL
+
+The AI engine is the heart of Ayra.
+
+Inspect and repair the complete AI pipeline.
+
+Required architecture:
+
+User Input
+→ Language Detection
+→ Intent Classification
+→ Context Management
+→ Provider Selection
+→ AI Execution
+→ Response Validation
+→ Tool Execution if required
+→ Response Formatting
+→ UI Rendering
+→ Conversation Persistence.
+
+## 3.1 Real AI Provider Integration
+
+Support legitimate provider integrations:
+
+- Google Gemini API
+- OpenAI API
+- Anthropic Claude API
+- OpenRouter
+- DeepSeek
+- xAI
+- Mistral
+- Compatible local Ollama servers
+
+Each provider must have:
+
+- Correct API endpoint.
+- Correct authentication.
+- Correct request schema.
+- Correct response parser.
+- Streaming support where available.
+- Timeout handling.
+- Retry policy.
+- Rate-limit handling.
+- Model availability checking.
+- Provider health monitoring.
+- Error classification.
+- Cancellation support.
+
+Do not pretend that a free community endpoint is official ChatGPT, Claude or Gemini.
+
+If a provider requires a paid API key, explain that requirement honestly.
+
+A user must be able to configure their own provider credentials securely.
+
+## 3.2 Intelligent Provider Routing
+
+Implement a reliable provider selection system.
+
+Routing should consider:
+
+- User-selected provider.
+- Available credentials.
+- Model capabilities.
+- Text versus image requests.
+- Coding requests.
+- Reasoning requirements.
+- Context limits.
+- Provider availability.
+- User-defined routing preferences.
+
+Implement a bounded retry mechanism and circuit breaker.
+
+Do not endlessly retry failed providers.
+
+Do not silently switch providers if doing so would violate user privacy preferences.
+
+## 3.3 Genuine AI Responses
+
+The application must:
+
+- Understand normal conversational questions.
+- Answer technical questions.
+- Answer scientific questions.
+- Explain complex concepts.
+- Solve mathematical problems.
+- Understand Bengali and English.
+- Understand Banglish.
+- Generate code.
+- Debug pasted code.
+- Analyze uploaded documents.
+- Maintain conversation context.
+- Ask clarifying questions when necessary.
+- Avoid irrelevant templates.
+- Avoid fabricated information.
+- Clearly distinguish verified information from uncertainty.
+
+Never return a fake successful AI response when all providers fail.
+
+Display meaningful network, authentication, quota and server errors.
+
+## 3.4 Real Web Search
+
+Implement genuine web search through supported search APIs or search providers.
+
+Requirements:
+
+- Search real websites.
+- Retrieve actual pages.
+- Extract relevant content.
+- Provide source links.
+- Show citations.
+- Distinguish search results from model-generated knowledge.
+- Handle unavailable pages.
+- Handle blocked websites.
+- Respect robots.txt, privacy and provider terms.
+
+Do not label generated knowledge as live web research.
+
+# PHASE 4 — COMPLETE VOICE ASSISTANT OVERHAUL
+
+This is one of the most important parts of Ayra.
+
+Audit every voice-related file and every voice button in the application.
+
+The Voice Assistant must be a real working voice assistant, not merely a TTS demonstration.
+
+## 4.1 Speech Recognition
+
+Implement genuine speech-to-text using supported Android speech recognition services or a suitable speech recognition backend.
+
+Support:
+
+- Bengali speech.
+- English speech.
+- Hindi speech.
+- Banglish speech where supported.
+- Automatic language detection where reliable.
+- Manual language selection.
+- Clear recognition status.
+- Microphone permission handling.
+- Recognition failure handling.
+- Background and lifecycle restrictions.
+
+## 4.2 Text-to-Speech
+
+Implement genuine TTS.
+
+Requirements:
+
+- Natural speech.
+- Bengali and English voice support where installed.
+- Language selection.
+- Speech speed.
+- Pitch control.
+- Pause.
+- Resume where supported.
+- Stop.
+- Proper audio focus.
+- Correct resource cleanup.
+
+Never claim a language voice is available without checking the installed TTS engine.
+
+## 4.3 Voice Conversation
+
+Implement a real voice conversation workflow:
+
+1. User activates the microphone.
+2. Assistant listens.
+3. Speech is converted into text.
+4. AI processes the actual request.
+5. AI response appears in chat.
+6. TTS reads the response.
+7. User can interrupt speech.
+8. User can continue the conversation.
+
+Add:
+
+- Push-to-talk.
+- Optional hands-free conversation.
+- Listening indicator.
+- Processing indicator.
+- Speaking indicator.
+- Stop-speaking control.
+- Microphone error handling.
+- Repeated recognition protection.
+- Battery-friendly lifecycle management.
+
+Do not run an unrestricted always-on microphone service.
+
+## 4.4 Voice Assistant Interface
+
+Create a polished, animated voice interface.
+
+Include:
+
+- Real-time listening state.
+- Animated waveform based on actual audio input when possible.
+- Microphone control.
+- Speaking animation.
+- Live transcript.
+- AI response.
+- Mute/unmute.
+- Stop button.
+- Language selector.
+
+Animations must reflect actual application states, not fabricated activity.
+
+# PHASE 5 — BOTTOM BAR, PLUS BUTTON AND EVERY UI CONTROL
+
+Inspect the entire ChatScreen and all connected components.
+
+Do not overlook the top navigation, bottom navigation, plus button, microphone, send button, attachment buttons or overflow menus.
+
+For EVERY visible button, icon, menu item, toggle and interactive component:
+
+1. Identify its onClick handler.
+2. Identify the function it calls.
+3. Follow the function to its final implementation.
+4. Verify whether it performs a real action.
+5. Verify permission requirements.
+6. Verify error handling.
+7. Verify success feedback.
+8. Verify persistence when required.
+9. Verify whether its UI state matches the real system state.
+
+Pay particular attention to:
+
+- Plus (+) button.
+- Voice assistant button.
+- Microphone.
+- Send button.
+- Chat history.
+- New chat.
+- Attach image.
+- Attach PDF.
+- Attach documents.
+- Camera.
+- Gallery.
+- File picker.
+- Search.
+- Settings.
+- Provider selection.
+- Model selection.
+- Chat menu.
+- Message actions.
+- Copy.
+- Share.
+- Regenerate.
+- Stop generation.
+- Clear conversation.
+- Delete conversation.
+- Bottom navigation.
+- Control Center.
+- All floating action buttons.
+
+The plus button must open a properly implemented attachment/action interface.
+
+Each action must work independently.
+
+Do not leave decorative buttons without functionality.
+
+If a feature cannot be implemented, remove the misleading control or clearly label it as unavailable.
+
+# PHASE 6 — DEVICE AUTOMATION
+
+Audit DeviceAutomationController and every connected action.
+
+Implement reliable supported Android actions:
+
+- Open installed applications.
+- Launch phone dialer.
+- Compose SMS.
+- Set alarms.
+- Open settings.
+- Control flashlight where supported.
+- Control supported audio functions.
+- Retrieve location with permission.
+- Open camera.
+- Share content.
+- Create reminders.
+- Schedule tasks.
+
+Important:
+
+Respect Android OS restrictions.
+
+Do not claim that an application can directly toggle Wi-Fi, Bluetooth, mobile data or restricted system settings when Android does not permit that operation.
+
+Use appropriate system settings panels or approved APIs.
+
+## Action Confirmation
+
+Every sensitive action must use a typed ProposedAction and explicit confirmation.
+
+Examples:
+
+- Calling someone.
+- Sending SMS.
+- Deleting data.
+- Sharing private files.
+- Changing sensitive settings.
+
+Never execute an unconfirmed action.
+
+Do not report an action as completed merely because an Intent was launched.
+
+Distinguish between opening a composer and actually sending a message.
+
+# PHASE 7 — TASK SCHEDULER AND REMINDERS
+
+Repair AyraTaskScheduler and ScheduledTaskReceiver.
+
+Implement:
+
+- Create task.
+- Edit task.
+- Delete task.
+- Cancel task.
+- Repeat task.
+- Daily reminder.
+- Weekly reminder.
+- Custom schedule.
+- Notification delivery.
+- Reboot recovery.
+- Timezone change handling.
+- Task status.
+- Failure reporting.
+
+Support Bengali and English date/time parsing.
+
+Support Bengali numerals:
+
+০ ১ ২ ৩ ৪ ৫ ৬ ৭ ৮ ৯
+
+Validate hours, minutes, dates and ambiguous expressions.
+
+Never silently convert an invalid time into 7 AM.
+
+Persist task data safely.
+
+# PHASE 8 — DATABASE AND STORAGE
+
+Completely inspect Room Database and StorageHelper.
+
+Fix:
+
+- Destructive migration.
+- Lost conversations.
+- Duplicate messages.
+- Concurrent writes.
+- Incorrect deletion.
+- Missing transactions.
+- Corrupted attachments.
+- Memory overload.
+- Storage leaks.
+
+Implement proper Room migrations.
+
+Preserve existing user data during upgrades.
+
+## Chat History
+
+Provide:
+
+- Create conversation.
+- Rename conversation.
+- Delete conversation.
+- Search history.
+- Restore conversation.
+- Persist messages.
+- Persist attachments.
+- Handle empty history.
+- Handle database errors.
+
+## Document Processing
+
+Support appropriate document processing for:
+
+- PDF.
+- TXT.
+- JSON.
+- CSV.
+- Markdown.
+- Source code.
+- Other supported formats.
+
+For PDF:
+
+- Use a proper PDF text extraction library.
+- Support multi-page documents.
+- Detect encrypted PDFs.
+- Detect scanned documents.
+- Use OCR for image-based documents when available.
+- Support Bengali text where the OCR engine permits.
+- Detect extraction failures.
+- Show truncation notices.
+- Avoid pretending incomplete extraction is complete.
+
+Do not forward private document contents to external AI services without explicit user consent.
+
+# PHASE 9 — CYBER TERMINAL AND SECURITY
+
+Perform a complete security audit of CyberTerminalEngine.
+
+Identify every real command, educational command, simulated result and unavailable operation.
+
+Clearly separate:
+
+- Real local diagnostics.
+- Real authorized network diagnostics.
+- Educational demonstrations.
+- Unsupported commands.
+
+Implement genuine safe diagnostic functions where technically and legally supported.
+
+Examples:
+
+- DNS lookup.
+- HTTP header inspection.
+- HTTP connectivity.
+- SHA-256 hashing.
+- SHA-512 hashing.
+- Base64 encoding and decoding.
+- Local network diagnostics.
+- Authorized security configuration checks.
+
+For port scanning, require explicit authorization and restrict the scope appropriately.
+
+Never display invented open ports, fake network routes or fake vulnerability results.
+
+Never execute arbitrary shell commands or destructive operations.
+
+Add:
+
+- Input validation.
+- Network timeouts.
+- Background execution.
+- Cancellation.
+- Consent.
+- Clear output provenance.
+- Error reporting.
+
+## VPN
+
+The existing fake VPN has correctly been decommissioned.
+
+Do not restore a fake VPN.
+
+Either:
+
+1. Keep VPN controls removed and explain that VPN functionality is unavailable; or
+2. Implement a genuine Android VpnService-based VPN with a real authorized VPN server, actual tunnel implementation, DNS handling, traffic routing and verified connection state.
+
+Never display fake encrypted bytes, fake kill-switch status or fake DNS leak protection.
+
+# PHASE 10 — AI APP AND CODE STUDIO
+
+Audit AiAppAndCodeStudio and all related components.
+
+Implement real coding assistance:
+
+- Code generation.
+- Code explanation.
+- Bug detection.
+- Bug fixing.
+- Refactoring.
+- Syntax analysis.
+- Error analysis.
+- Multi-language support.
+- Code formatting.
+- Copy code.
+- Export code.
+- File generation.
+
+Support Python, Kotlin, Java, JavaScript, TypeScript, HTML, CSS, C++, SQL and other supported languages.
+
+When users request an application or website:
+
+- Generate complete project structure.
+- Include necessary files.
+- Include dependencies.
+- Include setup instructions.
+- Include runnable code.
+- Include error handling.
+- Include tests where appropriate.
+
+Do not claim code has been compiled or executed unless an actual compiler/runtime executed it.
+
+If execution infrastructure is unavailable, clearly distinguish static code review from actual execution.
+
+# PHASE 11 — IMAGE, VIDEO, AUDIO AND 3D FEATURES
+
+Audit every media-related component.
+
+## Image
+
+Support genuine image upload, viewing and AI image analysis through compatible providers.
+
+If image generation is available, connect a real image generation API.
+
+Do not display a fake generated image or fabricated generation status.
+
+## Video
+
+Ensure VideoPlayerCard supports actual video playback.
+
+Test:
+
+- Play.
+- Pause.
+- Resume.
+- Seek.
+- Volume.
+- Fullscreen.
+- Error states.
+- Lifecycle cleanup.
+
+## Audio and Music
+
+Ensure SongPlayerCard and AyraAudioSynthesizer are correctly connected.
+
+Distinguish original generated audio from existing music.
+
+Implement real playback and media controls.
+
+Do not display fake playback progress.
+
+## 3D
+
+Inspect ThreeDModelCard and SolarSystem3DCanvas.
+
+Determine whether each visualization is:
+
+- A genuine interactive 3D model.
+- A 2D Canvas simulation.
+- A static illustration.
+
+Use accurate labels.
+
+Implement proper rendering, gestures, performance control and resource cleanup.
+
+# PHASE 12 — SETTINGS AND PROVIDER MANAGEMENT
+
+Audit every setting in ControlCenterSheet and ProviderKeysSection.
+
+Every setting must have a genuine effect.
+
+Implement:
+
+- Provider configuration.
+- API key management.
+- Model selection.
+- Routing preferences.
+- Language preferences.
+- Voice settings.
+- Theme.
+- Notifications.
+- Privacy controls.
+- Chat settings.
+- Data management.
+- Permission management.
+
+Persist settings using DataStore or an appropriate secure storage solution.
+
+API keys must be encrypted at rest using Android Keystore-backed encryption.
+
+Do not log API keys.
+
+Do not include keys in analytics or crash reports.
+
+Provide:
+
+- Show/hide key.
+- Validate key.
+- Test provider connection.
+- Edit key.
+- Delete key.
+- Clear confirmation.
+- Provider-specific errors.
+
+Never report a successful provider connection without making a real test request.
+
+# PHASE 13 — UI/UX COMPLETE PROFESSIONAL OVERHAUL
+
+Preserve the Ayra AI identity while improving the complete interface.
+
+The application should feel like a polished modern AI assistant.
+
+Improve:
+
+- Chat layout.
+- Message bubbles.
+- Input area.
+- Plus menu.
+- Voice interface.
+- Bottom bar.
+- Settings.
+- Control Center.
+- Provider configuration.
+- Loading states.
+- Empty states.
+- Error states.
+- Attachment previews.
+- Message actions.
+- Dark mode.
+- Light mode.
+- Responsive layouts.
+
+Add polished animations without compromising performance.
+
+Ensure:
+
+- No overlapping elements.
+- No clipped text.
+- No broken scrolling.
+- No keyboard covering input.
+- Proper system insets.
+- Accessible labels.
+- 48dp minimum touch targets where appropriate.
+- Dynamic font scaling.
+- Screen-reader compatibility.
+- Proper Bengali typography.
+
+Do not redesign working features unnecessarily.
+
+# PHASE 14 — PERFORMANCE AND STABILITY
+
+Audit the complete application for:
+
+- Memory leaks.
+- Coroutine leaks.
+- ANR.
+- NetworkOnMainThreadException.
+- Excessive recomposition.
+- Unnecessary API calls.
+- Infinite loops.
+- Repeated recognition sessions.
+- Battery drain.
+- Large document memory usage.
+- Bitmap leaks.
+- Audio resource leaks.
+- Database contention.
+- Slow startup.
+- UI freezing.
+
+Use appropriate:
+
+- Dispatchers.IO.
+- Dispatchers.Default.
+- Structured concurrency.
+- ViewModel lifecycle.
+- Cancellation.
+- Bounded caches.
+- Pagination.
+- Memory-aware document processing.
+- Network timeouts.
+
+Never block the main thread with network, filesystem or heavy computational operations.
+
+# PHASE 15 — PRIVACY AND SECURITY
+
+Perform a complete security review.
+
+Inspect:
+
+- AndroidManifest permissions.
+- API keys.
+- Local storage.
+- Network traffic.
+- FileProvider.
+- Uploaded documents.
+- Conversation history.
+- Contact access.
+- Location access.
+- Microphone access.
+- Camera access.
+- Notifications.
+- Background services.
+
+Apply least-privilege permissions.
+
+Request permissions only when the relevant feature is used.
+
+Remove unused permissions.
+
+Use HTTPS for remote API communications.
+
+Protect sensitive data.
+
+Do not expose personal information in logs.
+
+Ensure that third-party data transfers are disclosed and consent-based.
+
+Check exported Android components.
+
+Validate all incoming Intents and file URIs.
+
+# PHASE 16 — REAL AUTOMATED TESTING
+
+Do not rely on tests that only verify constant values, method existence or sample list sizes.
+
+Create meaningful tests.
+
+## Unit tests
+
+Test:
+
+- AI intent classification.
+- Provider selection.
+- Provider failure handling.
+- Bengali language detection.
+- Bengali numeral parsing.
+- Time parsing.
+- Action classification.
+- Action confirmation.
+- Database migrations.
+- Attachment extraction.
+- PDF failures.
+- Crisis detection.
+- Voice lifecycle.
+- Settings persistence.
+
+## Integration tests
+
+Test:
+
+- Actual database operations.
+- AI provider request and response parsing.
+- File attachment workflows.
+- Notification scheduling.
+- Device automation intents.
+- Voice recognition integration.
+- TTS lifecycle.
+- File sharing.
+
+Use MockWebServer for controlled API testing.
+
+Use Android instrumentation tests for actual device-dependent features.
+
+## Regression tests
+
+Build a minimum 300-prompt intent classification corpus.
+
+Include:
+
+- Bengali.
+- English.
+- Banglish.
+- Ordinary conversation.
+- Questions about technology.
+- Device commands.
+- Coding requests.
+- Ambiguous instructions.
+- False-positive automation examples.
+
+Verify that ordinary questions never trigger unintended device actions.
+
+## UI tests
+
+Test every major screen and every interactive control.
+
+Verify that:
+
+- Buttons work.
+- Menus open.
+- Settings persist.
+- Attachments work.
+- Voice controls work.
+- Navigation works.
+- Error messages are visible.
+- Loading states terminate correctly.
+
+# PHASE 17 — FIX ALL EXISTING AUDIT FINDINGS
+
+Revisit every finding in AUDIT.md.
+
+Specifically:
+
+- F01–F05: Independently verify claimed fixes.
+- F06: Remove or honestly label simulated features.
+- F07: Repair unreliable keyword routing.
+- F08: Verify third-party privacy protections.
+- F09: Verify secure key storage.
+- F10: Verify multilingual safety behavior.
+- F11: Complete lifecycle and state management.
+- F12: Complete provider resilience.
+- F13: Make settings functional.
+- F14: Complete Bengali/English date parsing.
+- F15: Repair voice lifecycle.
+- F16: Minimize permissions.
+- F17: Implement safe database migrations and document extraction.
+- F18: Remove network work from the main thread.
+- F19: Complete accessibility improvements.
+- F20: Verify build hygiene.
+- F21: Implement meaningful regression tests.
+
+Update AUDIT.md only after each finding has been independently verified.
+
+Do not mark an issue Fixed merely because code was changed.
+
+# PHASE 18 — ADDITIONAL HIGH-VALUE FEATURES
+
+After existing functionality is stable, evaluate and implement the following where appropriate:
+
+1. Better conversation memory with user control.
+2. Searchable conversation history.
+3. Conversation folders.
+4. Export and import conversations.
+5. AI model comparison.
+6. Configurable AI routing.
+7. Real-time streaming.
+8. Stop generation.
+9. Regenerate response.
+10. Message editing.
+11. Multiple attachment support.
+12. Document summarization.
+13. Document question answering.
+14. Image understanding.
+15. Real voice conversation.
+16. Custom voice preferences.
+17. Multilingual conversation.
+18. Code project export.
+19. Reminder management.
+20. Privacy dashboard.
+21. Offline capability for supported local tasks.
+22. Network status indicator.
+23. Provider health indicator.
+24. Data backup and recovery.
+25. Crash diagnostics and error reporting with privacy controls.
+
+Do not add a feature simply to increase the feature count.
+
+Every new feature must solve a genuine user problem and must have working implementation and tests.
+
+# PHASE 19 — FINAL ACCEPTANCE CRITERIA
+
+The project is complete only when the following conditions are satisfied:
+
+[ ] Entire source project audited.
+
+[ ] All critical findings fixed.
+
+[ ] All high-priority findings fixed or explicitly documented with a justified limitation.
+
+[ ] Gradle configuration repaired.
+
+[ ] Clean build succeeds.
+
+[ ] Debug APK generated successfully.
+
+[ ] Release build configuration verified.
+
+[ ] AI provider integrations tested.
+
+[ ] AI fallback tested.
+
+[ ] No fabricated AI success responses.
+
+[ ] Voice recognition tested.
+
+[ ] TTS tested.
+
+[ ] Voice interruption tested.
+
+[ ] Plus button fully functional.
+
+[ ] All major UI controls tested.
+
+[ ] Device actions tested.
+
+[ ] Sensitive actions require confirmation.
+
+[ ] Scheduler tested.
+
+[ ] Database migrations tested.
+
+[ ] PDF extraction tested.
+
+[ ] File attachments tested.
+
+[ ] Cyber Terminal outputs verified.
+
+[ ] Simulations clearly identified.
+
+[ ] API keys protected.
+
+[ ] Permissions minimized.
+
+[ ] No known critical memory leaks.
+
+[ ] No known main-thread network operations.
+
+[ ] Regression tests pass.
+
+[ ] UI tests pass.
+
+[ ] Existing user data preserved.
+
+[ ] No misleading feature claims.
+
+[ ] Final AUDIT.md updated.
+
+# PHASE 20 — REQUIRED FINAL DELIVERY REPORT
+
+When implementation is complete, provide a comprehensive report containing:
+
+1. Total files inspected.
+2. Total files modified.
+3. Total bugs discovered.
+4. Total bugs fixed.
+5. Remaining known issues.
+6. All removed dummy features.
+7. All replaced simulated features.
+8. All newly implemented features.
+9. AI provider integration status.
+10. Voice Assistant functionality status.
+11. Plus button and UI functionality status.
+12. Device automation status.
+13. Database and migration status.
+14. Security improvements.
+15. Performance improvements.
+16. Test cases executed.
+17. Test results.
+18. Gradle build results.
+19. APK generation results.
+20. Exact files changed.
+21. Any external API keys, backend services or infrastructure still required.
+
+For every feature, report its verification status.
+
+Never invent successful test results.
+
+If a feature requires a real API key, server, hardware device or paid subscription, state that clearly.
+
+---
+
+# STRICT IMPLEMENTATION RULES
+
+1. Do not stop after generating an audit report. Continue with actual fixes and implementation.
+2. Do not replace the entire existing application unnecessarily.
+3. Do not delete existing useful features without explaining why.
+4. Do not create dummy methods just to satisfy compilation.
+5. Do not return hardcoded success responses.
+6. Do not use fake AI responses as fallback.
+7. Do not use simulated network statistics as real results.
+8. Do not silently swallow exceptions.
+9. Do not bypass user permissions.
+10. Do not execute sensitive actions without confirmation.
+11. Do not claim that code has been tested without executing tests.
+12. Do not claim that a feature is complete merely because its UI exists.
+13. Do not leave incomplete TODO implementations in production paths.
+14. Do not expose secrets in APKs or source control.
+15. Do not sacrifice user data during database upgrades.
+16. Do not sacrifice stability for animations or visual effects.
+17. Maintain compatibility with the supported Android SDK range.
+18. Make changes incrementally and preserve a working project after every phase.
+
+## EXECUTION STRATEGY
+
+Work in this order:
+
+**Stage A:** Full forensic audit and complete issue inventory.
+
+**Stage B:** Repair build system and dependency configuration.
+
+**Stage C:** Repair critical security, data-loss and crash issues.
+
+**Stage D:** Repair AI engine and provider integrations.
+
+**Stage E:** Repair Voice Assistant and all voice controls.
+
+**Stage F:** Repair every button, plus menu, navigation and device automation feature.
+
+**Stage G:** Repair database, document processing and scheduling.
+
+**Stage H:** Repair Cyber Terminal and media functionality.
+
+**Stage I:** Improve UI, accessibility and performance.
+
+**Stage J:** Execute complete automated and manual testing.
+
+**Stage K:** Generate final APK and verification report.
+
+If the task exceeds available execution time or context, continue from the last completed stage. Never pretend that unfinished stages are complete.
+
+# FINAL OBJECTIVE
+
+Transform the existing Ayra AI into a genuinely intelligent, powerful, polished, reliable and secure Android AI assistant.
+
+Every visible feature must have a real implementation.
+
+Every action must produce a verifiable result.
+
+Every API integration must communicate with a genuine service.
+
+Every error must be handled honestly.
+
+Every sensitive action must respect user consent.
+
+Every major feature must have meaningful tests.
+
+**Build a real application, not a beautiful-looking collection of dummy features.**
+
+Start by extracting and auditing the complete project. Then provide the findings and immediately begin implementing the highest-priority fixes.

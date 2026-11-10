@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Ayra AI</string>
+    <string name="action_send">Send</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_speak">Voice Input</string>
+    <string name="action_copy">Copy</string>
+</resources>
