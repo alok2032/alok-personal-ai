@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
  * - Supports Local Ollama server (orcarouter/Qwen3.8-27B-Uncensored:q4_k_m / qwen3.8:27b-uncensored),
  *   OpenRouter Qwen 2.5/3.8 endpoints, and HuggingFace Inference API.
  */
-class Qwen38UncensoredEngine(private val context: Context) {
+class Qwen38UncensoredEngine(private val context: Context? = null) {
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(25, TimeUnit.SECONDS)
@@ -60,7 +60,7 @@ class Qwen38UncensoredEngine(private val context: Context) {
         systemInstruction: String = ABLITERATED_SYSTEM_PACK
     ): QwenResponse = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
-        val customUrl = AyraPreferences.getCustomEndpointUrl(context).trim()
+        val customUrl = context?.let { AyraPreferences.getCustomEndpointUrl(it) }?.trim() ?: ""
         val baseUrl = if (customUrl.isNotBlank()) {
             if (customUrl.endsWith("/")) customUrl else "$customUrl/"
         } else {
@@ -134,7 +134,7 @@ class Qwen38UncensoredEngine(private val context: Context) {
                 .url("${baseUrl}v1/chat/completions")
                 .post(openAiJson.toString().toRequestBody("application/json".toMediaType()))
 
-            val key = AyraPreferences.getCustomEndpointKey(context)
+            val key = context?.let { AyraPreferences.getCustomEndpointKey(it) } ?: ""
             if (key.isNotBlank()) reqBuilder.addHeader("Authorization", "Bearer $key")
 
             val response = httpClient.newCall(reqBuilder.build()).execute()
@@ -211,7 +211,8 @@ class Qwen38UncensoredEngine(private val context: Context) {
      */
     suspend fun testConnection(customEndpoint: String? = null): Long = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
-        val targetUrl = (customEndpoint ?: AyraPreferences.getCustomEndpointUrl(context)).trim()
+        val customFromPref = context?.let { AyraPreferences.getCustomEndpointUrl(it) } ?: ""
+        val targetUrl = (customEndpoint ?: customFromPref).trim()
         val baseUrl = if (targetUrl.isNotBlank()) {
             if (targetUrl.endsWith("/")) targetUrl else "$targetUrl/"
         } else {

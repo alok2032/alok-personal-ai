@@ -158,7 +158,6 @@ fun ChatScreen(
     var showClearChatDialog by remember { mutableStateOf(false) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showAttachmentPicker by remember { mutableStateOf(false) }
-    var showTopFeaturesSheet by remember { mutableStateOf(false) }
     var showControlCenterSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var expandedImageUri by remember { mutableStateOf<String?>(null) }
@@ -513,7 +512,6 @@ fun ChatScreen(
                 currentPersona = currentPersona,
                 currentSentiment = currentSentiment,
                 onLogoClick = { showControlCenterSheet = true },
-                onTopFeaturesClick = { showTopFeaturesSheet = true },
                 onClearChat = {
                     showClearChatDialog = true
                 },
@@ -743,16 +741,19 @@ fun ChatScreen(
             }
         }
 
-        // Attachment Source & Super-App Feature Hub Modal
+        // Attachment Source & Super-App Feature Hub Modal (Bottom '+' Hub)
         if (showAttachmentPicker) {
             Dialog(onDismissRequest = { showAttachmentPicker = false }) {
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = GlassSurfaceDark,
-                    border = androidx.compose.foundation.BorderStroke(1.2.dp, NeonCyan.copy(alpha = 0.8f)),
+                    shape = RoundedCornerShape(26.dp),
+                    color = Color(0xFF070B16),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.5.dp,
+                        Brush.linearGradient(listOf(NeonCyan, NeonPurple, NeonRose))
+                    ),
                     modifier = Modifier
-                        .fillMaxWidth(0.95f)
-                        .heightIn(max = 560.dp)
+                        .fillMaxWidth(0.96f)
+                        .heightIn(max = 620.dp)
                         .padding(vertical = 12.dp)
                 ) {
                     Column(
@@ -766,12 +767,38 @@ fun ChatScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(
-                                text = "Ayra AI Studio & Tools Hub ⚡",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = NeonCyan
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(Brush.radialGradient(listOf(NeonCyan, NeonPurple)))
+                                ) {
+                                    Icon(
+                                        Icons.Default.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(18.dp).align(Alignment.Center)
+                                    )
+                                }
+                                Column {
+                                    Text(
+                                        text = "Ayra AI Studio & Super-Hub ⚡",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = NeonCyan,
+                                        fontSize = 16.sp
+                                    )
+                                    Text(
+                                        text = "OmniRoute • DeepSeek • Higgsfield • Qwen • G0DM0D3",
+                                        color = TextSecondary,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
                             IconButton(
                                 onClick = { showAttachmentPicker = false },
                                 modifier = Modifier.size(28.dp)
@@ -780,13 +807,13 @@ fun ChatScreen(
                             }
                         }
 
+                        // Section 1: Multimodal Inputs
                         Text(
-                            text = "মিডিয়া, ডকুমেন্টস বা যেকোনো পাওয়ার টুল নির্বাচন করুন:",
-                            color = TextSecondary,
-                            fontSize = 11.sp
+                            text = "📸 মিডিয়া ও ডকুমেন্ট ইনপুট (Multimodal Capture):",
+                            color = NeonCyan,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold
                         )
-
-                        Spacer(modifier = Modifier.height(2.dp))
 
                         // 1. Camera
                         Row(
@@ -794,7 +821,8 @@ fun ChatScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
+                                .background(Color(0xFF0F172A))
+                                .border(0.8.dp, NeonCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
                                     val hasPerm = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
@@ -829,7 +857,8 @@ fun ChatScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
+                                .background(Color(0xFF0F172A))
+                                .border(0.8.dp, NeonPurple.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
                                     galleryLauncher.launch("image/*")
@@ -850,7 +879,8 @@ fun ChatScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
+                                .background(Color(0xFF0F172A))
+                                .border(0.8.dp, NeonCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
                                     documentLauncher.launch(
@@ -874,34 +904,194 @@ fun ChatScreen(
                             }
                         }
 
-                        // 4. Create New PDF Note
+                        // Section 2: Frontier Multi-AI Architectures
+                        Text(
+                            text = "🧠 ফ্রন্টিয়ার এআই ইঞ্জিন (Multi-Model Frontier Suite):",
+                            color = NeonGold,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        // 4. OmniRoute Ensemble
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF131B2E))
+                                .border(1.dp, NeonGold.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
-                                    inputText = "Create a professional PDF document about Artificial Intelligence"
+                                    selectedModelTier = "omniroute"
+                                    aiEngine.selectedModelTier = "omniroute"
+                                    inputText = "OmniRoute Ensemble: সব এআই মডেলের সম্মিলিত জ্ঞান দিয়ে গভীর বিশ্লেষণ দাও"
                                 }
                                 .padding(12.dp)
                         ) {
-                            Icon(Icons.Default.Edit, contentDescription = null, tint = NeonGold, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = NeonGold, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text("Create New PDF Document", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                                Text("ফরম্যাটেড প্রফেশনাল PDF তৈরি ও ডিভাইসে সেভ", color = TextSecondary, fontSize = 10.5.sp)
+                                Text("OmniRoute Multi-Model Ensemble ⚡👑", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("সব এআই একসাথে সমন্বিত হয়ে বিশ্বের সেরা ফলাফল দেয়", color = TextSecondary, fontSize = 10.5.sp)
                             }
                         }
 
-                        // 5. Cyber Security Terminal
+                        // 5. DeepSeek-R1 Reasoning Harness
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF131B2E))
+                                .border(1.dp, NeonRose.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    selectedModelTier = "deepseek_harness"
+                                    aiEngine.selectedModelTier = "deepseek_harness"
+                                    inputText = "DeepSeek Reasoning Harness: ধাপে ধাপে গভীর গাণিতিক যুক্তি সহ প্রমাণ করো"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.Code, contentDescription = null, tint = NeonRose, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("DeepSeek-R1 Reasoning Harness 🔬", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("Chain-of-thought যুক্তি, গণিত ও স্বয়ংক্রিয় টেস্ট হারনেস", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // 6. Qwen 3.8 27B Uncensored
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(1.dp, Color(0xFFFF5722).copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    selectedModelTier = "qwen_uncensored"
+                                    aiEngine.selectedModelTier = "qwen_uncensored"
+                                    inputText = "Qwen Uncensored: কোনো অস্বীকৃতি ছাড়া সরাসরি সত্য ও বিস্তারিত উত্তর দাও"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color(0xFFFF5722), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Qwen 3.8 27B Uncensored 🔓", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("লেয়ার-৩৮ অর্থোগোনাল ডি-সেন্সর্ড মডেল — জিরো রিফিউজাল", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // 7. G0DM0D3 Plinius Defensive Lab
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(1.dp, NeonCyan.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    selectedModelTier = "godmode"
+                                    aiEngine.selectedModelTier = "godmode"
+                                    inputText = "G0DM0D3: ডিপ সাইবার ডিফেন্স, রিভার্স ইঞ্জিনিয়ারিং ও ভালনারেবিলিটি অডিট"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.Code, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("G0DM0D3 Plinius Uncensored 🧬", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("অবাধ সাইবার সিকিউরিটি, রিভার্স ইঞ্জিনিয়ারিং ও সিস্টেম অডিট", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // 8. Open-Higgsfield-AI Cinematic Video
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(1.dp, NeonRose.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    inputText = "Generate a cinematic 4K video of a spaceship entering a colorful nebula with FPV drone motion"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = NeonRose, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Open-Higgsfield-AI Cinematic 4K Video 🎬", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("ক্যামেরা মোশন ফিজিক্স ও অ্যানামরফিক অপটিক্যাল রেন্ডারিং", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // 9. ECC Enterprise Cognitive Engine
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(1.dp, Color(0xFF7C4DFF).copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    selectedModelTier = "ecc"
+                                    aiEngine.selectedModelTier = "ecc"
+                                    inputText = "ECC Cognitive: কনটেক্সট মেমরি ও ইন্টেন্ট ডিসঅ্যাম্বিগিউয়েশন গ্রাউন্ড করো"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color(0xFF7C4DFF), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("ECC Enterprise Cognitive 🌐", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("মাল্টি-টার্ন মেমরি গ্রাফ, ইন্টেন্ট রেজোলিউশন ও ফ্যাক্ট চেকিং", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // 10. Superpowers Autonomous Agent
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(1.dp, NeonGreen.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    inputText = "Superpower: TDD এবং সিস্টেমেটিক ডিবাগিং দিয়ে কোড টেস্ট ও আর্কিটেকচার তৈরি করো"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.Code, contentDescription = null, tint = NeonGreen, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Superpowers Autonomous Agent ⚙️", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("TDD টেস্ট ড্রাইভেন কোডিং, সিস্টেমেটিক ডিবাগিং ও কোড রিভিউ", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // Section 3: Advanced Practical Tools
+                        Text(
+                            text = "⚡ পাওয়ার টুলস ও সিকিউরিটি (Security & Utility Hub):",
+                            color = NeonCyan,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        // 11. Cyber Security Terminal
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(0.8.dp, NeonGreen.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
                                     inputText = "Open Cyber Terminal"
@@ -917,13 +1107,102 @@ fun ChatScreen(
                             }
                         }
 
-                        // 6. VPN Privacy Shield
+                        // 12. Create New PDF Document
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF131B2E))
+                                .border(0.8.dp, NeonGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    inputText = "Create a professional PDF document about Artificial Intelligence"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null, tint = NeonGold, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Create New PDF Document 📄", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("ফরম্যাটেড প্রফেশনাল PDF তৈরি ও ডিভাইসে সেভ", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // 13. AI Image Studio
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(0.8.dp, NeonPurple.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    inputText = "একটি সুন্দর রঙিন ড্রাগনের 8K ছবি আঁকো"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.Image, contentDescription = null, tint = NeonPurple, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("AI Image Studio (8K Masterpiece) 🎨", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("DALL-E 3 + Gemini + Flux.1 আল্ট্রা-রিয়েল ভিজ্যুয়াল", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // 14. AI Music & Song Studio
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(0.8.dp, NeonCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    inputText = "একটি রোমান্টিক মিষ্টি প্রেমের গান বানাও"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.VolumeUp, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("AI Music & Song Creator 🎵", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("নতুন সুর, লিরিক্স ও অডিও প্লেয়ার সিন্থেসিস", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // 15. Build-Your-Own-X Engineering
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(0.8.dp, NeonGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showAttachmentPicker = false
+                                    inputText = "Build your own Redis server from scratch with complete architecture and code"
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Icon(Icons.Default.Code, contentDescription = null, tint = NeonGold, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Build-Your-Own-X Master Engine ⚙️", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                                Text("Git, Docker, Redis, SQLite, Transformer স্ক্র্যাচ থেকে কোড", color = TextSecondary, fontSize = 10.5.sp)
+                            }
+                        }
+
+                        // 16. VPN Privacy Shield
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF131B2E))
+                                .border(0.8.dp, NeonCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
                                     val ns = AyraVpnPrivacyController.toggleVpn(context)
@@ -939,97 +1218,14 @@ fun ChatScreen(
                             }
                         }
 
-                        // 7. AI Image Studio (Triple Synergy)
+                        // 17. Schedule Routine / Call
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF131B2E))
-                                .clickable {
-                                    showAttachmentPicker = false
-                                    inputText = "একটি সুন্দর রঙিন ড্রাগনের 8K ছবি আঁকো"
-                                }
-                                .padding(12.dp)
-                        ) {
-                            Icon(Icons.Default.Image, contentDescription = null, tint = NeonPurple, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text("AI Image Studio (8K Masterpiece) 🎨", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                                Text("ChatGPT (DALL-E 3) + Gemini 2.5 + Claude 3.7 সিনার্জি", color = TextSecondary, fontSize = 10.5.sp)
-                            }
-                        }
-
-                        // 8. AI Video Creator
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
-                                .clickable {
-                                    showAttachmentPicker = false
-                                    inputText = "Generate a cinematic 4K video of a spaceship entering a nebula"
-                                }
-                                .padding(12.dp)
-                        ) {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = NeonRose, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text("AI Video Generator 🎬", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                                Text("প্রম্পট বা ছবি থেকে সিনেমাটিক ভিডিও ক্লিপ", color = TextSecondary, fontSize = 10.5.sp)
-                            }
-                        }
-
-                        // 9. AI Music & Song Studio
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
-                                .clickable {
-                                    showAttachmentPicker = false
-                                    inputText = "একটি রোমান্টিক মিষ্টি প্রেমের গান বানাও"
-                                }
-                                .padding(12.dp)
-                        ) {
-                            Icon(Icons.Default.VolumeUp, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text("AI Music & Song Creator 🎵", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                                Text("নতুন সুর, লিরিক্স ও অডিও প্লেয়ার সিন্থেসিস", color = TextSecondary, fontSize = 10.5.sp)
-                            }
-                        }
-
-                        // 10. Build-Your-Own-X Engineering
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
-                                .clickable {
-                                    showAttachmentPicker = false
-                                    inputText = "Build your own Redis server from scratch with complete architecture and code"
-                                }
-                                .padding(12.dp)
-                        ) {
-                            Icon(Icons.Default.Code, contentDescription = null, tint = NeonGold, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text("Build-Your-Own-X Master Engine ⚙️", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                                Text("Git, Docker, Redis, SQLite, Transformer স্ক্র্যাচ থেকে কোড", color = TextSecondary, fontSize = 10.5.sp)
-                            }
-                        }
-
-                        // 11. Schedule Routine / Call
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
+                                .border(0.8.dp, NeonCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
                                     inputText = "কাল সকাল ১০টায় বাবাকে কল করে বলো ওষুধ খেয়ে নিতে"
@@ -1044,13 +1240,14 @@ fun ChatScreen(
                             }
                         }
 
-                        // 12. Share GPS Location
+                        // 18. Share GPS Location
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF131B2E))
+                                .border(0.8.dp, NeonRose.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
                                     dispatchPrompt("Where am I right now? GPS Coordinates")
@@ -1141,157 +1338,6 @@ fun ChatScreen(
             )
         }
 
-        // Top '+' Quick Hub Modal Dialog
-        if (showTopFeaturesSheet) {
-            Dialog(onDismissRequest = { showTopFeaturesSheet = false }) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.95f)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0xFF0A0F1D))
-                        .border(
-                            1.5.dp,
-                            Brush.linearGradient(listOf(NeonCyan, NeonPurple, NeonRose)),
-                            RoundedCornerShape(20.dp)
-                        )
-                        .padding(18.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(Brush.radialGradient(listOf(NeonCyan, NeonPurple)))
-                                ) {
-                                    Icon(
-                                        Icons.Default.AutoAwesome,
-                                        contentDescription = null,
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(18.dp).align(Alignment.Center)
-                                    )
-                                }
-                                Text(
-                                    text = "Quick Features Hub",
-                                    color = TextPrimary,
-                                    fontSize = 17.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            IconButton(onClick = { showTopFeaturesSheet = false }) {
-                                Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
-                            }
-                        }
-
-                        Text(
-                            text = "Ayra Core Controls & Defensive Cyber Suite",
-                            color = NeonCyan,
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        // 1. Cyber Security Terminal
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
-                                .clickable {
-                                    showTopFeaturesSheet = false
-                                    inputText = "Open Cyber Terminal"
-                                    dispatchPrompt("Open Cyber Terminal")
-                                }
-                                .padding(12.dp)
-                        ) {
-                            Icon(Icons.Default.Code, contentDescription = null, tint = NeonGreen, modifier = Modifier.size(22.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Cyber Terminal Lab 💻", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                Text("In-built Linux shell (ls, pwd, ping, whois, nmap, cve, owasp)", color = TextSecondary, fontSize = 11.sp)
-                            }
-                        }
-
-                        // 2. Wikipedia & Science Research
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
-                                .clickable {
-                                    showTopFeaturesSheet = false
-                                    inputText = "বিজ্ঞান ও প্রযুক্তি সম্পর্কিত সাম্প্রতিক অগ্রগতি সম্পর্কে বলো"
-                                    dispatchPrompt("বিজ্ঞান ও প্রযুক্তি সম্পর্কিত সাম্প্রতিক অগ্রগতি সম্পর্কে বলো")
-                                }
-                                .padding(12.dp)
-                        ) {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(22.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Science & Knowledge Wiki 🌐", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                Text("Scientific research, educational summaries & verified insights", color = TextSecondary, fontSize = 11.sp)
-                            }
-                        }
-
-                        // 4. Voice Modulation & Tone
-                        if (currentPersona == "GF_COMPANION") {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFF131B2E))
-                                    .clickable {
-                                        showTopFeaturesSheet = false
-                                        showControlCenterSheet = true
-                                    }
-                                    .padding(12.dp)
-                            ) {
-                                Icon(Icons.Default.VolumeUp, contentDescription = null, tint = NeonRose, modifier = Modifier.size(22.dp))
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text("Dynamic Voice: ${currentSentiment.emoji} ${currentSentiment.displayName}", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                    Text("Pitch: ${String.format(Locale.US, "%.2f", currentSentiment.pitch)}x • Speed: ${String.format(Locale.US, "%.2f", currentSentiment.speechRate)}x", color = TextSecondary, fontSize = 11.sp)
-                                }
-                            }
-                        }
-
-                        // 5. Open Full Control Center & Settings
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF1E293B))
-                                .clickable {
-                                    showTopFeaturesSheet = false
-                                    showControlCenterSheet = true
-                                }
-                                .padding(12.dp)
-                        ) {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = NeonGold, modifier = Modifier.size(22.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Full Settings & AI Models ⚙️", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                Text("ChatGPT, Gemini, Claude, Wake-Word, Persona & Scheduler", color = TextSecondary, fontSize = 11.sp)
-                            }
-                        }
-                    }
-                }
-        }
-
         if (showClearChatDialog) {
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showClearChatDialog = false },
@@ -1321,7 +1367,6 @@ fun ChatScreen(
         }
     }
 }
-}
 
 @Composable
 private fun GlassHeaderBar(
@@ -1330,7 +1375,6 @@ private fun GlassHeaderBar(
     currentPersona: String,
     currentSentiment: UserSentiment = UserSentiment.NEUTRAL_CARING,
     onLogoClick: () -> Unit,
-    onTopFeaturesClick: () -> Unit,
     onClearChat: () -> Unit,
     onStopVoice: () -> Unit
 ) {
@@ -1464,26 +1508,6 @@ private fun GlassHeaderBar(
                 Icon(Icons.Default.VolumeUp, contentDescription = "Mute", tint = NeonRose)
             }
         }
-
-        // Top '+' Quick Hub Button beside Delete as explicitly requested by user
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(Color(0x2200FFFF))
-                .border(1.dp, NeonCyan.copy(alpha = 0.5f), CircleShape)
-                .clickable { onTopFeaturesClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Quick Features Hub",
-                tint = NeonCyan,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(4.dp))
 
         IconButton(onClick = onClearChat) {
             Icon(Icons.Default.Delete, contentDescription = "Clear Chat", tint = TextSecondary)
@@ -1716,9 +1740,9 @@ private fun GlassMessageBubble(
                     }
                 )
 
-                // Edit Note button for user query (allows modifying/re-searching if wrong)
+                // Moderate Futuristic Edit Question Button for user queries
                 if (isUser) {
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically,
@@ -1726,16 +1750,31 @@ private fun GlassMessageBubble(
                     ) {
                         Row(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF0F172A).copy(alpha = 0.7f))
-                                .border(0.8.dp, NeonCyan.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF0B132B).copy(alpha = 0.85f))
+                                .border(
+                                    1.dp,
+                                    Brush.linearGradient(listOf(NeonCyan.copy(alpha = 0.7f), NeonPurple.copy(alpha = 0.5f))),
+                                    RoundedCornerShape(10.dp)
+                                )
                                 .clickable { onEdit(message.content) }
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
+                                .testTag("edit_question_button"),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit Question / নোট এডিট", tint = NeonCyan, modifier = Modifier.size(12.dp))
-                            Text("Edit Note / প্রশ্ন এডিট", color = NeonCyan, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Edit Question / প্রশ্ন এডিট",
+                                tint = NeonCyan,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = "Edit Question / প্রশ্ন এডিট",
+                                color = NeonCyan,
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }
@@ -1780,17 +1819,31 @@ private fun GlassInputRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Attachment Plus Button
+        // Upgraded Bottom '+' Hub Button (High Quality, Futuristic Glow, 48dp target)
         Box(
             modifier = Modifier
-                .size(46.dp)
+                .size(48.dp)
                 .clip(CircleShape)
-                .background(GlassSurfaceDark)
-                .border(1.2.dp, NeonPurple.copy(alpha = 0.6f), CircleShape)
-                .clickable { onAttachClick() },
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color(0xFF1E1035), GlassSurfaceDark)
+                    )
+                )
+                .border(
+                    1.4.dp,
+                    Brush.linearGradient(listOf(NeonCyan, NeonPurple, NeonRose)),
+                    CircleShape
+                )
+                .clickable { onAttachClick() }
+                .testTag("bottom_attachment_hub_button"),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Attach", tint = NeonPurple)
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Attach & Super-App Tools Hub",
+                tint = NeonCyan,
+                modifier = Modifier.size(22.dp)
+            )
         }
 
         // Text Field (High Contrast & Visible Input)

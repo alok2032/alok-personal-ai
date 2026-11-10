@@ -762,6 +762,6 @@ private fun saveKey(context: Context, provider: AiProviderType, key: String) {
         AiProviderType.PERPLEXITY -> AyraPreferences.setPerplexityKey(context, key)
         AiProviderType.OPENROUTER -> AyraPreferences.setCustomOpenRouterKey(context, key)
         AiProviderType.LOCAL_OLLAMA -> AyraPreferences.setCustomEndpointUrl(context, key)
-        AiProviderType.KEYLESS_COMMUNITY -> {}
+        AiProviderType.OMNI_ROUTE -> {}
     }
 }

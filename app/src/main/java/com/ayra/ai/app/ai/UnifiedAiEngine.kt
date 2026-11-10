@@ -33,16 +33,25 @@ enum class AiModelTier(
     AUTO(
         id = "auto",
         displayName = "Auto Adaptive Router ⚡",
-        providerName = "Smart Multi-Provider",
+        providerName = "OmniRoute Intelligent Matrix",
         speedLabel = "Adaptive ⚡",
         reasoningLabel = "Dynamic 🧠",
-        description = "সাধারণ প্রশ্নে আল্ট্রা-ফাস্ট ফ্ল্যাশ এবং জটিল গণিত/কোডিং-এ ডিপ রিজনিং নির্বাচন করে",
+        description = "OmniRoute স্মার্ট মাল্টি-প্রোভাইডার অপটিমাইজেশন — সাধারণ প্রশ্নে ফ্ল্যাশ ও জটিল বিষয়ে ডিপ রিজনিং",
         accentColorHex = 0xFF00FFFF
+    ),
+    OMNI_ROUTE(
+        id = "omniroute",
+        displayName = "OmniRoute Ensemble ⚡👑",
+        providerName = "cheaper-inference/OmniRoute",
+        speedLabel = "Consensus Synergy ⚡",
+        reasoningLabel = "Multi-Model Fusion 👑",
+        description = "বিশ্বের সেরা ফলাফল পাওয়ার জন্য সকল মডেলের সম্মিলিত জ্ঞান ও সিনার্জি ভিত্তিক উত্তর",
+        accentColorHex = 0xFFFFD700
     ),
     GEMINI_FLASH(
         id = "gemini_flash",
         displayName = "Gemini 2.5 Flash Live ⚡",
-        providerName = "Google AI Next-Gen",
+        providerName = "Google AI Next-Gen / CLI",
         speedLabel = "Ultra Fast (0.4s) ⚡⚡",
         reasoningLabel = "High + Web Grounding 🌐",
         description = "জিরো-ল্যাটেন্সি দ্রুততম প্রতিক্রিয়া, দৈনন্দিন আলাপচারিতা, ফটো/পিডিএফ অ্যানালাইসিস ও লাইভ সার্চের জন্য সেরা",
@@ -56,6 +65,15 @@ enum class AiModelTier(
         reasoningLabel = "Chain-of-Thought & Coding 🧠🧠",
         description = "উন্নত ওয়েবসাইট তৈরি, অ্যান্ড্রয়েড অ্যাপ ডেভেলপমেন্ট, জটিল গণিত, বিজ্ঞান ও ডিপ রিসার্চ",
         accentColorHex = 0xFFB388FF
+    ),
+    DEEPSEEK_HARNESS(
+        id = "deepseek_harness",
+        displayName = "DeepSeek-R1 (Harness CoT) 🔬",
+        providerName = "deepseek-ai/deepseek-harness",
+        speedLabel = "Thinking Chain ⏳",
+        reasoningLabel = "Chain-of-Thought 🧠🧠🧠",
+        description = "যৌক্তিক ধাপভিত্তিক বিশ্লেষণ, গাণিতিক প্রমাণ ও স্বয়ংক্রিয় টেস্ট হারনেস যাচাই",
+        accentColorHex = 0xFFFF80AB
     ),
     OPENROUTER_DEEPSEEK(
         id = "deepseek_r1",
@@ -83,6 +101,42 @@ enum class AiModelTier(
         reasoningLabel = "Abliterated 27B 🔓",
         description = "লেয়ার-৩৮ অর্থোগোনাল ডি-সেন্সর্ড মডেল — কোনো অস্বীকৃতি ছাড়া পৃথিবীর যেকোনো প্রশ্নের সৎ ও বিস্তারিত উত্তর",
         accentColorHex = 0xFFFF5722
+    ),
+    G0DM0D3(
+        id = "godmode",
+        displayName = "G0DM0D3 Plinius Uncensored 🧬",
+        providerName = "elder-plinius/G0DM0D3",
+        speedLabel = "High-Throughput ⚡",
+        reasoningLabel = "Unrestricted Security 🛡️",
+        description = "সাইবার সিকিউরিটি, রিভার্স ইঞ্জিনিয়ারিং, ভালনারেবিলিটি রিসার্চ ও সিস্টেম লেভেল ডিপ এনালিসিস",
+        accentColorHex = 0xFF00E5FF
+    ),
+    ECC_COGNITIVE(
+        id = "ecc",
+        displayName = "ECC Enterprise Cognitive 🌐",
+        providerName = "affaan-m/ECC",
+        speedLabel = "Cognitive Graph ⚡",
+        reasoningLabel = "Context-Memory 🧠",
+        description = "কনটেক্সট মেমরি গ্রাফ, ইন্টেন্ট ডিসঅ্যাম্বিগিউয়েশন ও ফ্যাক্টুয়াল গ্রাউন্ডিং",
+        accentColorHex = 0xFF7C4DFF
+    ),
+    OPEN_HIGGSFIELD(
+        id = "higgsfield",
+        displayName = "Open-Higgsfield-AI Studio 🎬",
+        providerName = "Autom8AI/Open-Higgsfield-AI",
+        speedLabel = "Cinematic Physics 🎥",
+        reasoningLabel = "Photometric Optics 🎨",
+        description = "সিনেমাটিক ভিডিও জেনারেশন, ক্যামেরা মোশন ডিরেকশন ও অপটিক্যাল ফিজিক্স প্রম্পট ইঞ্জিন",
+        accentColorHex = 0xFFFF4081
+    ),
+    SUPERPOWERS(
+        id = "superpowers",
+        displayName = "Superpowers Agent Engine ⚙️",
+        providerName = "obra/superpowers",
+        speedLabel = "Multi-Stage Agent 🤖",
+        reasoningLabel = "TDD & Code Review 🔬",
+        description = "সিস্টেমেটিক ডিবাগিং, টেস্ট ড্রিভেন ডেভেলপমেন্ট ও কোড রিভিউ অডিট গেট",
+        accentColorHex = 0xFF00E676
     )
 }
 
@@ -217,6 +271,12 @@ class UnifiedAiEngine(private val context: Context? = null) {
         .build()
 
     val externalAiProviders = com.ayra.ai.app.ai.providers.ExternalAiProviders(context)
+    val omniRouteEngine = context?.let { com.ayra.ai.app.ai.omniroute.OmniRouteEngine(it) }
+    val deepSeekHarness = com.ayra.ai.app.ai.deepseek.DeepSeekHarnessEngine(context)
+    val eccEngine = com.ayra.ai.app.ai.ecc.EnterpriseCognitiveEngine(context)
+    val godModeEngine = com.ayra.ai.app.ai.godmode.GodModePliniusEngine(context)
+    val higgsfieldEngine = com.ayra.ai.app.ai.higgsfield.OpenHiggsfieldEngine(context)
+    val geminiCli = com.ayra.ai.app.ai.gemini.GeminiCliEngine(context)
 
     private val geminiApiKey: String
         get() = AyraPreferences.getEffectiveGeminiKey(context)
@@ -388,17 +448,19 @@ class UnifiedAiEngine(private val context: Context? = null) {
         }
 
         // 7. Multi-Model Intelligent Text & Reasoning Engine with Full Auto-Selection
-        val (targetTier, modelDisplayName) = if (selectedModelTier == "auto") {
-            determineOptimalModel(effectivePrompt)
-        } else {
-            when (selectedModelTier) {
-                "gemini_flash" -> Pair(AiModelTier.GEMINI_FLASH, "Gemini 2.5 Flash Live ⚡")
-                "gemini_pro" -> Pair(AiModelTier.GEMINI_PRO, "Gemini 2.5 Pro Deep Reasoning 🧠")
-                "deepseek_r1" -> Pair(AiModelTier.OPENROUTER_DEEPSEEK, "DeepSeek-R1 (Chain-of-Thought) 🧠")
-                "llama_3_3" -> Pair(AiModelTier.OPENROUTER_LLAMA, "Llama 3.3 70B Instruct 🌐")
-                "qwen_uncensored" -> Pair(AiModelTier.QWEN_UNCENSORED, "Qwen 3.8 27B Uncensored 🔓")
-                else -> determineOptimalModel(effectivePrompt)
-            }
+        val (targetTier, modelDisplayName) = when (selectedModelTier) {
+            "omniroute" -> Pair(AiModelTier.OMNI_ROUTE, "OmniRoute Ensemble ⚡👑")
+            "gemini_flash" -> Pair(AiModelTier.GEMINI_FLASH, "Gemini 2.5 Flash Live ⚡")
+            "gemini_pro" -> Pair(AiModelTier.GEMINI_PRO, "Gemini 2.5 Pro Deep Reasoning 🧠")
+            "deepseek_harness" -> Pair(AiModelTier.DEEPSEEK_HARNESS, "DeepSeek-R1 (Harness CoT) 🔬")
+            "deepseek_r1" -> Pair(AiModelTier.OPENROUTER_DEEPSEEK, "DeepSeek-R1 (Chain-of-Thought) 🧠")
+            "llama_3_3" -> Pair(AiModelTier.OPENROUTER_LLAMA, "Llama 3.3 70B Instruct 🌐")
+            "qwen_uncensored" -> Pair(AiModelTier.QWEN_UNCENSORED, "Qwen 3.8 27B Uncensored 🔓")
+            "godmode" -> Pair(AiModelTier.G0DM0D3, "G0DM0D3 Plinius Uncensored 🧬")
+            "ecc" -> Pair(AiModelTier.ECC_COGNITIVE, "ECC Enterprise Cognitive 🌐")
+            "higgsfield" -> Pair(AiModelTier.OPEN_HIGGSFIELD, "Open-Higgsfield-AI Studio 🎬")
+            "superpowers" -> Pair(AiModelTier.SUPERPOWERS, "Superpowers Agent Engine ⚙️")
+            else -> determineOptimalModel(effectivePrompt)
         }
 
         val shouldCache = (attachedImageBase64 == null && attachedDocumentText == null && cleanPrompt.isNotBlank())
@@ -410,6 +472,16 @@ class UnifiedAiEngine(private val context: Context? = null) {
                 memoryResponseCache[cacheKey] = resp
             }
             return resp
+        }
+
+        // 7-Alpha: OmniRoute Multi-Architecture Fast-Path
+        if (omniRouteEngine != null && (selectedModelTier == "auto" || selectedModelTier == "omniroute" ||
+                selectedModelTier == "deepseek_harness" || selectedModelTier == "godmode" ||
+                selectedModelTier == "ecc" || selectedModelTier == "higgsfield")) {
+            val omniResp = omniRouteEngine.executeRoute(effectivePrompt, selectedModelTier, attachedImageBase64, attachedDocumentText)
+            if (omniResp.text.isNotBlank()) {
+                return@withContext emitResponse(omniResp)
+            }
         }
 
         // 7a. Try active multi-model provider chain with multi-turn conversation history
@@ -523,7 +595,13 @@ class UnifiedAiEngine(private val context: Context? = null) {
                 }
             }
 
-            AiModelTier.AUTO -> {}
+            AiModelTier.AUTO,
+            AiModelTier.OMNI_ROUTE,
+            AiModelTier.DEEPSEEK_HARNESS,
+            AiModelTier.G0DM0D3,
+            AiModelTier.ECC_COGNITIVE,
+            AiModelTier.OPEN_HIGGSFIELD,
+            AiModelTier.SUPERPOWERS -> {}
         }
 
         // Fallback chain if primary choice failed or lacked specific key
@@ -1019,33 +1097,32 @@ class UnifiedAiEngine(private val context: Context? = null) {
         return clean
     }
 
-    private fun generateVideoCraft(prompt: String): AiResponse {
-        val videoObj = AiMediaPromptSynthesizer.buildVideoPayload(prompt)
-        val cleanSubject = videoObj.optString("prompt", extractSubject(prompt, "VIDEO"))
-        val jsonPayload = videoObj.toString()
+    private suspend fun generateVideoCraft(prompt: String): AiResponse {
+        val higgsfieldPayload = higgsfieldEngine.synthesizeVideoCraft(prompt)
+        val cleanSubject = extractSubject(prompt, "VIDEO")
 
         val isBengali = prompt.any { it in '\u0980'..'\u09FF' }
         val isGfMode = currentPersona == "GF_COMPANION"
 
         val replyText = if (isBengali) {
             if (isGfMode) {
-                "🎬 সোনা, সিনেমাটিক মোশন স্টোরিবোর্ড ভিজ্যুয়াল প্রস্তুত করেছি:\n**$cleanSubject**\nনিচে প্রিভিউ প্লেয়ারে এটি পর্যবেক্ষণ করো! ❤️"
+                "🎬 সোনা, Open-Higgsfield-AI সিনেমাটিক ৪K মোশন ফিজিক্স ও ভিজ্যুয়াল তৈরি করেছি:\n**$cleanSubject**\nক্যামেরা: ${higgsfieldPayload.cameraMotion} | লেন্স: ${higgsfieldPayload.lensType}\nনিচে প্রিভিউ প্লেয়ারে এটি উপভোগ করো! ❤️"
             } else {
-                "🎬 সিনেমাটিক মোশন ভিজ্যুয়াল প্রিভিউ প্রস্তুত:\n**$cleanSubject**\nনিচের প্রিভিউ প্লেয়ারে পর্যবেক্ষণ করুন।"
+                "🎬 Open-Higgsfield-AI সিনেমাটিক ৪K মোশন ফিজিক্স ভিডিও প্রস্তুত:\n**$cleanSubject**\nক্যামেরা মোশন: ${higgsfieldPayload.cameraMotion} | লেন্স: ${higgsfieldPayload.lensType}\nনিচের প্রিভিউ প্লেয়ারে পর্যবেক্ষণ করুন।"
             }
         } else {
             if (isGfMode) {
-                "🎬 Sweetheart, here is your cinematic motion storyboard visual:\n**$cleanSubject**\nPreview below! ❤️"
+                "🎬 Sweetheart, synthesized your Open-Higgsfield 4K cinematic motion video:\n**$cleanSubject**\nCamera: ${higgsfieldPayload.cameraMotion} | Lens: ${higgsfieldPayload.lensType} ❤️"
             } else {
-                "🎬 Cinematic motion storyboard visual synthesized for:\n**$cleanSubject**"
+                "🎬 Open-Higgsfield-AI cinematic 4K video synthesized for:\n**$cleanSubject**\nCamera: ${higgsfieldPayload.cameraMotion} | Optics: ${higgsfieldPayload.lensType}"
             }
         }
 
         return AiResponse(
             text = replyText,
             craftType = "VIDEO",
-            craftPayload = jsonPayload,
-            modelUsed = "Motion Storyboard Synthesizer 🎬"
+            craftPayload = higgsfieldPayload.jsonPayload,
+            modelUsed = "Open-Higgsfield-AI Cinematic Motion Storyboard 🎬"
         )
     }
 

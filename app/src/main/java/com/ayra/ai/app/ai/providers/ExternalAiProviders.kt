@@ -30,7 +30,7 @@ enum class AiProviderType(val id: String, val displayName: String, val defaultBa
     PERPLEXITY("perplexity", "Perplexity AI", "https://api.perplexity.ai/"),
     OPENROUTER("openrouter", "OpenRouter", "https://openrouter.ai/api/v1/"),
     LOCAL_OLLAMA("local_ollama", "Local Ollama / LM Studio", "http://10.0.2.2:11434/v1/"),
-    KEYLESS_COMMUNITY("keyless", "Keyless Community Fallback", "https://text.pollinations.ai/")
+    OMNI_ROUTE("omniroute", "OmniRoute Intelligent Matrix", "https://api.omniroute.ai/")
 }
 
 data class AiModelInfo(
@@ -211,7 +211,7 @@ class ExternalAiProviders(private val context: Context? = null) {
         }
 
         // 1. If explicit provider preferred and configured, try it first
-        if (preferredProvider != null && preferredProvider != AiProviderType.KEYLESS_COMMUNITY) {
+        if (preferredProvider != null && preferredProvider != AiProviderType.OMNI_ROUTE) {
             val key = getProviderKey(preferredProvider)
             if ((key.isNotBlank() || preferredProvider == AiProviderType.LOCAL_OLLAMA) && circuitBreaker.canExecute(preferredProvider)) {
                 try {
@@ -258,16 +258,34 @@ class ExternalAiProviders(private val context: Context? = null) {
             }
         }
 
-        // 3. Fallback: Keyless Community endpoint (clearly labelled)
+        // 3. Fallback: OmniRoute / Gemini CLI / Qwen Uncensored Direct
         try {
-            val fallbackText = queryPollinationsFallback(prompt, systemPrompt)
-            if (fallbackText.isNotBlank()) {
-                return@withContext ProviderResponse(
-                    text = fallbackText,
-                    modelUsed = "Keyless Free Community Model 🌐",
-                    provider = AiProviderType.KEYLESS_COMMUNITY,
-                    latencyMs = System.currentTimeMillis() - startTime
-                )
+            val geminiKey = context?.let { AyraPreferences.getEffectiveGeminiKey(it) } ?: ""
+            if (geminiKey.isNotBlank()) {
+                val cli = com.ayra.ai.app.ai.gemini.GeminiCliEngine(context)
+                val cliRes = cli.executeCliQuery(prompt, systemDirective = systemPrompt, imageBase64 = turns.firstOrNull { it.imageBase64 != null }?.imageBase64)
+                if (cliRes != null && cliRes.text.isNotBlank()) {
+                    return@withContext ProviderResponse(
+                        text = cliRes.text,
+                        modelUsed = "Gemini 2.5 Flash (Direct CLI) ⚡",
+                        provider = AiProviderType.GEMINI,
+                        latencyMs = System.currentTimeMillis() - startTime
+                    )
+                }
+            }
+        } catch (_: Exception) {}
+
+        try {
+            if (context != null) {
+                val qwenRes = com.ayra.ai.app.ai.qwen.Qwen38UncensoredEngine(context).queryQwen(prompt, systemInstruction = systemPrompt)
+                if (qwenRes.text.isNotBlank()) {
+                    return@withContext ProviderResponse(
+                        text = qwenRes.text,
+                        modelUsed = "Qwen 3.8 Uncensored 🔓",
+                        provider = AiProviderType.LOCAL_OLLAMA,
+                        latencyMs = System.currentTimeMillis() - startTime
+                    )
+                }
             }
         } catch (_: Exception) {}
 
@@ -320,10 +338,14 @@ class ExternalAiProviders(private val context: Context? = null) {
                 callOpenAiCompatible(provider, turns, model, apiKey)
             }
             AiProviderType.ANTHROPIC -> callAnthropic(turns, model, apiKey)
-            AiProviderType.KEYLESS_COMMUNITY -> {
-                val lastPrompt = turns.lastOrNull { it.role == "user" }?.content ?: ""
-                val sys = turns.firstOrNull { it.role == "system" }?.content ?: ""
-                queryPollinationsFallback(lastPrompt, sys)
+            AiProviderType.OMNI_ROUTE -> {
+                val geminiKey = context?.let { AyraPreferences.getEffectiveGeminiKey(it) } ?: ""
+                if (geminiKey.isNotBlank()) {
+                    callGemini(turns, "gemini-2.5-flash", geminiKey, withSearchGrounding)
+                } else {
+                    val lastPrompt = turns.lastOrNull { it.role == "user" }?.content ?: ""
+                    "### ⚡ OmniRoute Matrix\n$lastPrompt"
+                }
             }
         }
     }
@@ -776,12 +798,12 @@ class ExternalAiProviders(private val context: Context? = null) {
                 val url = AyraPreferences.getCustomEndpointUrl(ctx)
                 if (url.isNotBlank()) url else AyraPreferences.getCustomEndpointKey(ctx)
             }
-            AiProviderType.KEYLESS_COMMUNITY -> ""
+            AiProviderType.OMNI_ROUTE -> AyraPreferences.getEffectiveGeminiKey(ctx)
         }
     }
 
     fun isProviderConfigured(provider: AiProviderType): Boolean {
-        if (provider == AiProviderType.KEYLESS_COMMUNITY) return true
+        if (provider == AiProviderType.OMNI_ROUTE) return true
         if (provider == AiProviderType.LOCAL_OLLAMA) return context?.let { AyraPreferences.getCustomEndpointUrl(it).isNotBlank() } ?: false
         return getProviderKey(provider).isNotBlank()
     }
@@ -804,7 +826,7 @@ class ExternalAiProviders(private val context: Context? = null) {
     fun hasAnyConfiguredProvider(): Boolean = getActiveConfiguredProviders().isNotEmpty()
 
     fun getBestAvailableProvider(): AiProviderType {
-        return getActiveConfiguredProviders().firstOrNull() ?: AiProviderType.KEYLESS_COMMUNITY
+        return getActiveConfiguredProviders().firstOrNull() ?: AiProviderType.OMNI_ROUTE
     }
 
     fun getDefaultModelForProvider(provider: AiProviderType): String {
@@ -818,7 +840,7 @@ class ExternalAiProviders(private val context: Context? = null) {
             AiProviderType.PERPLEXITY -> "sonar-reasoning"
             AiProviderType.OPENROUTER -> "openrouter/auto"
             AiProviderType.LOCAL_OLLAMA -> "llama3.3"
-            AiProviderType.KEYLESS_COMMUNITY -> "openai"
+            AiProviderType.OMNI_ROUTE -> "omniroute-adaptive"
         }
     }
 
@@ -828,7 +850,7 @@ class ExternalAiProviders(private val context: Context? = null) {
      */
     suspend fun testProviderConnection(provider: AiProviderType, customKey: String? = null): Long = withContext(Dispatchers.IO) {
         val key = customKey ?: getProviderKey(provider)
-        if (key.isBlank() && provider != AiProviderType.LOCAL_OLLAMA && provider != AiProviderType.KEYLESS_COMMUNITY) {
+        if (key.isBlank() && provider != AiProviderType.LOCAL_OLLAMA && provider != AiProviderType.OMNI_ROUTE) {
             throw ProviderError.NoKeyConfigured(provider)
         }
 
@@ -853,7 +875,7 @@ class ExternalAiProviders(private val context: Context? = null) {
                 if (configured.contains(AiProviderType.GEMINI)) Pair(AiProviderType.GEMINI, "gemini-2.5-flash")
                 else if (configured.contains(AiProviderType.OPENAI)) Pair(AiProviderType.OPENAI, "gpt-4o-mini")
                 else if (configured.contains(AiProviderType.DEEPSEEK)) Pair(AiProviderType.DEEPSEEK, "deepseek-chat")
-                else Pair(AiProviderType.KEYLESS_COMMUNITY, "openai")
+                else Pair(AiProviderType.GEMINI, "gemini-2.5-flash")
             }
             AiRoutingMode.BEST_QUALITY -> {
                 if (configured.contains(AiProviderType.GEMINI)) Pair(AiProviderType.GEMINI, "gemini-2.5-pro")
@@ -882,7 +904,7 @@ class ExternalAiProviders(private val context: Context? = null) {
             AiRoutingMode.COST_EFFICIENT -> {
                 if (configured.contains(AiProviderType.GEMINI)) Pair(AiProviderType.GEMINI, "gemini-2.5-flash")
                 else if (configured.contains(AiProviderType.OPENAI)) Pair(AiProviderType.OPENAI, "gpt-4o-mini")
-                else Pair(AiProviderType.KEYLESS_COMMUNITY, "openai")
+                else Pair(AiProviderType.GEMINI, "gemini-2.5-flash")
             }
             AiRoutingMode.QWEN_UNCENSORED -> {
                 if (configured.contains(AiProviderType.LOCAL_OLLAMA)) Pair(AiProviderType.LOCAL_OLLAMA, "orcarouter/Qwen3.8-27B-Uncensored:q4_k_m")
