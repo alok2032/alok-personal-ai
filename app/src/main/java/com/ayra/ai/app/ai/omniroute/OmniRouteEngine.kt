@@ -53,7 +53,7 @@ class OmniRouteEngine(private val context: Context? = null) {
         val lower = prompt.lowercase().trim()
 
         if (selectedTier == "qwen_uncensored") {
-            return RouteDecision("Qwen 3.8 Uncensored", "Explicit user tier override: Layer-38 abliterated weights")
+            return RouteDecision("Qwen 3.8 Uncensored", "Explicit user tier override: Qwen 27B model")
         }
         if (selectedTier == "deepseek_r1" || selectedTier == "deepseek_harness") {
             return RouteDecision("DeepSeek-Harness", "Explicit user tier override: Deep reasoning chain-of-thought")
@@ -173,31 +173,24 @@ class OmniRouteEngine(private val context: Context? = null) {
             }
         }
 
-        // 3. Fallback to Gemini CLI or DeepSeek or External
+        // 3. Fallback to configured external providers (OpenRouter, Gemini, DeepSeek, etc.)
         try {
-            val fallbackCli = geminiCli.executeCliQuery(prompt, imageBase64 = imageBase64)
-            if (fallbackCli != null && fallbackCli.text.isNotBlank()) {
+            val extRes = externalProviders.generateChatResponse(
+                prompt = prompt,
+                systemPrompt = "You are Ayra AI. Answer accurately and directly in the user's language."
+            )
+            if (extRes.text.isNotBlank()) {
                 return@withContext AiResponse(
-                    text = fallbackCli.text,
-                    modelUsed = "OmniRoute Fallback (Gemini Flash)"
+                    text = extRes.text,
+                    modelUsed = extRes.modelUsed
                 )
             }
         } catch (_: Exception) {}
 
-        try {
-            val qwenFallback = qwenEngine.queryQwen(prompt)
-            if (qwenFallback.text.isNotBlank()) {
-                return@withContext AiResponse(
-                    text = qwenFallback.text,
-                    modelUsed = "OmniRoute Fallback (Qwen 3.8)"
-                )
-            }
-        } catch (_: Exception) {}
-
-        // Final deterministic answer
+        // Honest offline / no-key message without fake echo or simulation
         AiResponse(
-            text = "### ⚡ OmniRoute Optimized Response\n\n$prompt\n\nউন্নত মাল্টি-মডেল রাউটিংয়ের মাধ্যমে আপনার অনুরোধটি প্রক্রিয়া করা হয়েছে।",
-            modelUsed = "OmniRoute Core"
+            text = "কোনো এআই প্রোভাইডার কনফিগার করা নেই অথবা নেটওয়ার্ক সংযোগ বিচ্ছিন্ন। অনুগ্রহ করে সেটিংস থেকে একটি এআই কি (Gemini / OpenRouter / OpenAI / DeepSeek) যুক্ত করুন বা সংযোগ পরীক্ষা করুন।",
+            modelUsed = "Ayra System"
         )
     }
 

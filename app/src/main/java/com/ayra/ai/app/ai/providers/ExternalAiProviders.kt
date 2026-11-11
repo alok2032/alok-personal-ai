@@ -324,7 +324,7 @@ class ExternalAiProviders(private val context: Context? = null) {
 
     // --- Provider Call Dispatchers ---
 
-    private fun callSpecificProvider(
+    fun callSpecificProviderPublic(
         provider: AiProviderType,
         model: String,
         turns: List<ChatTurn>,
@@ -343,12 +343,19 @@ class ExternalAiProviders(private val context: Context? = null) {
                 if (geminiKey.isNotBlank()) {
                     callGemini(turns, "gemini-2.5-flash", geminiKey, withSearchGrounding)
                 } else {
-                    val lastPrompt = turns.lastOrNull { it.role == "user" }?.content ?: ""
-                    "### ⚡ OmniRoute Matrix\n$lastPrompt"
+                    throw ProviderError.NoKeyConfigured(AiProviderType.GEMINI)
                 }
             }
         }
     }
+
+    fun callSpecificProvider(
+        provider: AiProviderType,
+        model: String,
+        turns: List<ChatTurn>,
+        apiKey: String,
+        withSearchGrounding: Boolean = true
+    ): String = callSpecificProviderPublic(provider, model, turns, apiKey, withSearchGrounding)
 
     // --- 1. Google Gemini Implementation ---
 

@@ -19,4 +19,10 @@ interface ChatDao {
 
     @Query("DELETE FROM chat_messages")
     suspend fun clearAllMessages()
+
+    @Query("DELETE FROM chat_messages WHERE id = :id")
+    suspend fun deleteMessageById(id: Long)
+
+    @Query("SELECT * FROM chat_messages WHERE content LIKE '%' || :query || '%' ORDER BY timestamp DESC")
+    suspend fun searchMessages(query: String): List<ChatMessage>
 }

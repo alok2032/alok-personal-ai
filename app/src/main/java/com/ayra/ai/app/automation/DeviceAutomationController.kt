@@ -940,36 +940,12 @@ class DeviceAutomationController(private val context: Context) {
         val isConnect = text.contains("on") || text.contains("অন") || text.contains("connect") || text.contains("কানেক্ট") || text.contains("chalu") || text.contains("চালু")
         val isDisconnect = text.contains("off") || text.contains("অফ") || text.contains("disconnect") || text.contains("বন্ধ") || text.contains("bondho")
 
-        if (isDisconnect) {
-            AyraVpnPrivacyController.setVpnConnected(false)
-            return AutomationResult(
-                executed = true,
-                feedbackMessage = if (isBengali) "🛡️ Ayra WireGuard VPN টানেল সফলভাবে বন্ধ করা হয়েছে।"
-                else "🛡️ Ayra WireGuard VPN tunnel disconnected.",
-                actionType = "VPN_DISCONNECTED"
-            )
-        }
-
-        if (isConnect) {
-            val status = AyraVpnPrivacyController.vpnStatus.value
-            if (!status.isConfigured) {
-                return AutomationResult(
-                    executed = false,
-                    feedbackMessage = if (isBengali) "🛡️ কোনো WireGuard কনফিগারেশন যোগ করা নেই। কন্ট্রোল সেন্টার থেকে .conf ফাইল ইমপোর্ট করুন।"
-                    else "🛡️ No WireGuard configuration found. Please import your .conf profile in Control Center.",
-                    actionType = "VPN_UNCONFIGURED"
-                )
-            }
-            AyraVpnPrivacyController.setVpnConnected(true)
-            val current = AyraVpnPrivacyController.vpnStatus.value
-            return AutomationResult(
-                executed = true,
-                feedbackMessage = if (isBengali) "🛡️ WireGuard VPN সফলভাবে সক্রিয় করা হয়েছে!\n📍 সার্ভার: ${current.config.serverName} (${current.config.endpoint})\n🔒 লোকাল টানেল: ${current.config.clientAddress} (ChaCha20-Poly1305)"
-                else "🛡️ WireGuard VPN connected!\n📍 Server: ${current.config.serverName} (${current.config.endpoint})\n🔒 Tunnel: ${current.config.clientAddress} (ChaCha20-Poly1305)",
-                actionType = "VPN_CONNECTED",
-                extraData = current.config.endpoint
-            )
-        }
+        return AutomationResult(
+            executed = false,
+            feedbackMessage = if (isBengali) "🛡️ ভিপিএন সার্ভিস প্রাইভেসি পলিসির কারণে নিষ্ক্রিয় রাখা হয়েছে।"
+            else "🛡️ VPN tunnel service is decommissioned in accordance with Google Play privacy guidelines.",
+            actionType = "VPN_DECOMMISSIONED"
+        )
 
         val summary = AyraVpnPrivacyController.formatStatusSummary(isBengali)
         return AutomationResult(

@@ -7,6 +7,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -127,7 +129,8 @@ import com.ayra.ai.app.ui.theme.UserBubble
 import com.ayra.ai.app.voice.SentimentDetector
 import com.ayra.ai.app.voice.UserSentiment
 import com.ayra.ai.app.voice.VoiceAssistantManager
-import kotlinx.coroutines.launch
+import com.ayra.ai.app.ai.AyraOrchestrator
+import com.ayra.ai.app.ui.viewmodel.ChatViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -137,6 +140,7 @@ import java.util.Locale
 @Composable
 fun ChatScreen(
     chatDao: ChatDao,
+    viewModel: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -145,6 +149,7 @@ fun ChatScreen(
 
     val messages by chatDao.getAllMessages().collectAsState(initial = emptyList())
     val automationController = remember { DeviceAutomationController(context) }
+    val orchestrator = remember { AyraOrchestrator(context) }
     val aiEngine = remember { UnifiedAiEngine(context) }
     val db = remember { ChatDatabase.getDatabase(context) }
     val taskScheduler = remember { AyraTaskScheduler(context) }
@@ -153,24 +158,32 @@ fun ChatScreen(
     var currentPersona by remember { mutableStateOf("AI_ASSISTANT") }
     var selectedModelTier by remember { mutableStateOf("auto") }
     var inputText by remember { mutableStateOf("") }
-    var isGenerating by remember { mutableStateOf(false) }
+    val isGenerating by viewModel.isGenerating.collectAsState()
+    val thinkingStatus by viewModel.thinkingStatus.collectAsState()
+    val streamingAnswer by viewModel.streamingAnswer.collectAsState()
+    val showKeyOnboarding by viewModel.showKeyOnboarding.collectAsState()
     var pendingAction by remember { mutableStateOf<ProposedAction?>(null) }
-    var showClearChatDialog by remember { mutableStateOf(false) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedDocumentUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedDocumentName by remember { mutableStateOf<String?>(null) }
+    var selectedDocumentText by remember { mutableStateOf<String?>(null) }
+
+    var showClearChatDialog by remember { mutableStateOf(false) }
     var showAttachmentPicker by remember { mutableStateOf(false) }
     var showControlCenterSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var expandedImageUri by remember { mutableStateOf<String?>(null) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
-    var selectedDocumentUri by remember { mutableStateOf<Uri?>(null) }
-    var selectedDocumentName by remember { mutableStateOf<String?>(null) }
-    var selectedDocumentText by remember { mutableStateOf<String?>(null) }
     var selectedDocumentBase64Image by remember { mutableStateOf<String?>(null) }
 
-    AyraVpnPrivacyController.initialize(context)
-    val vpnStatus by AyraVpnPrivacyController.vpnStatus.collectAsState()
-
     var dispatchPromptRef by remember { mutableStateOf<((String) -> Unit)?>(null) }
+
+    LaunchedEffect(Unit) {
+        val providers = com.ayra.ai.app.ai.providers.ExternalAiProviders(context)
+        if (!providers.hasAnyConfiguredProvider()) {
+            viewModel.setShowKeyOnboarding(true)
+        }
+    }
 
     // Voice Assistant Manager setup with instant execution & real-time voice-to-text
     val voiceManager = remember {
@@ -369,7 +382,7 @@ fun ChatScreen(
                     )
                 )
                 voiceManager.speak("I hear you and I care about your safety. Free confidential help is available right now. Please reach out to someone you trust.")
-                isGenerating = false
+                viewModel.finishSending()
                 return@launch
             }
 
@@ -384,7 +397,7 @@ fun ChatScreen(
                     )
                 )
                 pendingAction = proposed
-                isGenerating = false
+                viewModel.finishSending()
                 return@launch
             }
 
@@ -396,13 +409,13 @@ fun ChatScreen(
                 )
             )
 
-            isGenerating = true
+            viewModel.tryStartSending()
 
             // 2. Check for Autonomous Scheduled Task
             if (taskScheduler.isSchedulingIntent(trimmed)) {
                 val scheduleResult = taskScheduler.scheduleTaskFromPrompt(trimmed)
                 if (scheduleResult.executed) {
-                    isGenerating = false
+                    viewModel.finishSending()
                     chatDao.insertMessage(
                         ChatMessage(
                             role = "assistant",
@@ -419,7 +432,7 @@ fun ChatScreen(
             // 2b. Check for harmless quick automation commands
             val autoResult = automationController.tryExecuteAutomation(trimmed)
             if (autoResult != null && autoResult.executed) {
-                isGenerating = false
+                viewModel.finishSending()
                 chatDao.insertMessage(
                     ChatMessage(
                         role = "assistant",
@@ -432,7 +445,7 @@ fun ChatScreen(
                 return@launch
             }
 
-            // 3. Unified Fast Multimodal AI & Media Synthesis (Q&A, Coding, Video, Image, Song, 3D, Document Inspection)
+            // 3. Streaming Orchestrator Execution (Q&A, Coding, Vision, Research, etc.)
             try {
                 var base64Image: String? = null
                 if (!attachedUriStr.isNullOrBlank()) {
@@ -449,25 +462,55 @@ fun ChatScreen(
                 }
 
                 val history = chatDao.getRecentMessages(15)
-                val response = aiEngine.generateUnifiedResponse(
-                    prompt = trimmed,
-                    attachedImageBase64 = base64Image,
-                    attachedDocumentText = docText,
-                    attachedDocumentName = docName,
-                    personaMode = currentPersona,
-                    modelTier = selectedModelTier,
-                    conversationHistory = history
-                )
-                chatDao.insertMessage(
-                    ChatMessage(
-                        role = "assistant",
-                        content = response.text,
-                        craftType = response.craftType,
-                        craftPayload = response.craftPayload,
-                        actionCommand = response.modelUsed
-                    )
-                )
-                voiceManager.speak(response.text, overrideSentiment = detectedSentiment)
+                val orchestratorJob = scope.launch {
+                    orchestrator.handle(
+                        prompt = trimmed,
+                        persona = currentPersona,
+                        tier = selectedModelTier,
+                        history = history,
+                        imageBase64 = base64Image,
+                        documentText = docText,
+                        documentName = docName
+                    ).collect { event ->
+                        when (event) {
+                            is com.ayra.ai.app.ai.AyraEvent.Status -> {
+                                viewModel.setThinkingStatus(event.message)
+                            }
+                            is com.ayra.ai.app.ai.AyraEvent.Token -> {
+                                viewModel.appendStreamingToken(event.text)
+                            }
+                            is com.ayra.ai.app.ai.AyraEvent.ActionRequired -> {
+                                viewModel.setPendingAction(event.action)
+                            }
+                            is com.ayra.ai.app.ai.AyraEvent.Complete -> {
+                                chatDao.insertMessage(
+                                    ChatMessage(
+                                        role = "assistant",
+                                        content = event.response.text,
+                                        craftType = event.response.craftType,
+                                        craftPayload = event.response.craftPayload,
+                                        actionCommand = event.response.modelUsed
+                                    )
+                                )
+                                voiceManager.speak(event.response.text, overrideSentiment = detectedSentiment)
+                            }
+                            is com.ayra.ai.app.ai.AyraEvent.Error -> {
+                                val err = event.error.userFriendlyMessage
+                                chatDao.insertMessage(
+                                    ChatMessage(
+                                        role = "assistant",
+                                        content = "⚠️ $err"
+                                    )
+                                )
+                                if (event.error is com.ayra.ai.app.ai.providers.AyraError.NoProviderConfigured) {
+                                    viewModel.setShowKeyOnboarding(true)
+                                }
+                            }
+                        }
+                    }
+                }
+                viewModel.setInFlightJob(orchestratorJob)
+                orchestratorJob.join()
             } catch (e: Exception) {
                 val err = "Error processing request: ${e.message}"
                 chatDao.insertMessage(
@@ -477,7 +520,7 @@ fun ChatScreen(
                     )
                 )
             } finally {
-                isGenerating = false
+                viewModel.finishSending()
             }
         }
     }
@@ -562,7 +605,10 @@ fun ChatScreen(
 
                         if (isGenerating) {
                             item {
-                                AssistantGeneratingIndicator()
+                                AssistantGeneratingIndicator(
+                                    statusText = thinkingStatus,
+                                    streamingText = streamingAnswer
+                                )
                             }
                         }
                     }
@@ -664,7 +710,7 @@ fun ChatScreen(
                                 )
                             )
                             voiceManager.speak(result.feedbackMessage)
-                            pendingAction = null
+                            viewModel.setPendingAction(null)
                         }
                     },
                     onDismiss = {
@@ -675,7 +721,7 @@ fun ChatScreen(
                                     content = "Action cancelled by user / কাজটি বাতিল করা হয়েছে।"
                                 )
                             )
-                            pendingAction = null
+                            viewModel.setPendingAction(null)
                         }
                     },
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -689,6 +735,7 @@ fun ChatScreen(
                 isListening = isListening,
                 isGenerating = isGenerating,
                 onSend = { dispatchPrompt(inputText) },
+                onStop = { viewModel.stopGeneration() },
                 onMicClick = {
                     val hasRecord = ContextCompat.checkSelfPermission(
                         context,
@@ -1195,28 +1242,6 @@ fun ChatScreen(
                             }
                         }
 
-                        // 16. VPN Privacy Shield
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131B2E))
-                                .border(0.8.dp, NeonCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                                .clickable {
-                                    showAttachmentPicker = false
-                                    val ns = AyraVpnPrivacyController.toggleVpn(context)
-                                    Toast.makeText(context, if (ns) "🛡️ System-Wide VPN Connected! (All apps protected)" else "🛡️ VPN Disconnected", Toast.LENGTH_SHORT).show()
-                                }
-                                .padding(12.dp)
-                        ) {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text("Ayra VPN Privacy Shield 🛡️", color = TextPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
-                                Text(if (vpnStatus.isConnected) "Status: Connected (${vpnStatus.config.endpoint})" else if (vpnStatus.isConfigured) "WireGuard Ready (${vpnStatus.config.endpoint})" else "WireGuard টানেল ও ChaCha20 এনক্রিপশন", color = TextSecondary, fontSize = 10.5.sp)
-                            }
-                        }
 
                         // 17. Schedule Routine / Call
                         Row(
@@ -1809,6 +1834,7 @@ private fun GlassInputRow(
     isListening: Boolean,
     isGenerating: Boolean,
     onSend: () -> Unit,
+    onStop: () -> Unit,
     onMicClick: () -> Unit,
     onAttachClick: () -> Unit
 ) {
@@ -1886,19 +1912,29 @@ private fun GlassInputRow(
             )
         }
 
-        // Send Button
+        // Send / Stop Button
         Box(
             modifier = Modifier
                 .size(46.dp)
                 .clip(CircleShape)
                 .background(
-                    Brush.linearGradient(listOf(NeonCyan, NeonPurple))
+                    if (isGenerating) Brush.linearGradient(listOf(Color(0xFFFF1744), Color(0xFFD50000)))
+                    else Brush.linearGradient(listOf(NeonCyan, NeonPurple))
                 )
-                .clickable(enabled = !isGenerating && text.isNotBlank()) { onSend() },
+                .clickable {
+                    if (isGenerating) onStop()
+                    else if (text.isNotBlank()) onSend()
+                }
+                .testTag("chat_send_button"),
             contentAlignment = Alignment.Center
         ) {
             if (isGenerating) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.Black)
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Stop",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
             } else {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
@@ -2025,26 +2061,44 @@ private fun EmptyCosmicState(
 }
 
 @Composable
-private fun AssistantGeneratingIndicator() {
-    Row(
+private fun AssistantGeneratingIndicator(
+    statusText: String? = null,
+    streamingText: String? = null
+) {
+    Column(
         modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .background(GlassSurfaceDark)
-            .border(1.dp, NeonCyan.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+            .border(1.dp, NeonCyan.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(16.dp),
-            strokeWidth = 2.dp,
-            color = NeonCyan
-        )
-        Text(
-            text = "Ayra is thinking & synthesizing...",
-            style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+                color = NeonCyan
+            )
+            Text(
+                text = statusText ?: "Ayra is thinking & synthesizing...",
+                style = MaterialTheme.typography.bodySmall,
+                color = NeonCyan,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        if (!streamingText.isNullOrBlank()) {
+            Text(
+                text = streamingText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextPrimary,
+                lineHeight = 20.sp
+            )
+        }
     }
 }
 

@@ -120,13 +120,30 @@ class DeepSeekHarnessEngine(private val context: Context? = null) {
             )
         }
 
-        // 4. Autonomous fallback reasoning synthesis
-        val synthesizedCoT = synthesizeAutonomousProof(prompt)
+        // 4. Fallback to external AI providers or honest message
+        try {
+            val extProviders = com.ayra.ai.app.ai.providers.ExternalAiProviders(context)
+            val extRes = extProviders.generateChatResponse(
+                prompt = prompt,
+                systemPrompt = systemInstruction,
+                preferredModelId = "deepseek/deepseek-r1"
+            )
+            if (extRes.text.isNotBlank()) {
+                val (thinking, answer) = parseThinkingChain(extRes.text)
+                return@withContext HarnessResult(
+                    finalAnswer = answer,
+                    reasoningChain = thinking,
+                    modelUsed = "DeepSeek-R1 (${extRes.modelUsed})",
+                    latencyMs = System.currentTimeMillis() - start
+                )
+            }
+        } catch (_: Exception) {}
+
         HarnessResult(
-            finalAnswer = synthesizedCoT.second,
-            reasoningChain = synthesizedCoT.first,
+            finalAnswer = "DeepSeek বা OpenRouter API Key কনফিগার করা নেই। অনুগ্রহ করে Settings থেকে একটি সক্রিয় কী প্রদান করুন।",
+            reasoningChain = null,
             testHarnessCode = null,
-            modelUsed = "DeepSeek-Harness Autonomous CoT",
+            modelUsed = "DeepSeek-Harness",
             latencyMs = System.currentTimeMillis() - start
         )
     }
@@ -220,30 +237,5 @@ class DeepSeekHarnessEngine(private val context: Context? = null) {
         } catch (_: Exception) {
             null
         }
-    }
-
-    private fun synthesizeAutonomousProof(prompt: String): Pair<String, String> {
-        val thinking = """
-            DeepSeek-Harness Deliberate Evaluation:
-            1. Problem Decomposition: Examining primary parameters of "$prompt".
-            2. Constraints & Edge Cases: Analyzing boundary values, computational complexity, and correctness guarantees.
-            3. Formal Verification: Applying inductive reasoning and syntactic validation.
-            4. Solution Convergence: Establishing deterministic output with optimal execution path.
-        """.trimIndent()
-
-        val answer = """
-            ### 🧠 DeepSeek Reasoning & Formal Analysis
-            
-            **প্রশ্ন/সমস্যা:** $prompt
-            
-            **মূল সমাধান ও ব্যাখ্যা:**
-            - সমস্যাটিকে মৌলিক অংশে বিভক্ত করে যুক্তিযুক্ত সমাধান নির্ধারণ করা হয়েছে।
-            - প্রতিটি গাণিতিক ও প্রযুক্তিগত দিক নিখুঁতভাবে যাচাইকৃত।
-            
-            **মূল সিদ্ধান্ত:**
-            সর্বোচ্চ নির্ভুলতা ও নির্ভরযোগ্যতা বজায় রেখে কার্যকর ও প্রডাকশন-গ্রেড সমাধান কার্যকর করা হয়েছে।
-        """.trimIndent()
-
-        return Pair(thinking, answer)
     }
 }

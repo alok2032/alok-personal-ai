@@ -33,9 +33,8 @@ fun AyraTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
-                window.statusBarColor = CosmicBackground.toArgb()
-                window.navigationBarColor = CosmicBackground.toArgb()
                 WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+                WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
             }
         }
     }

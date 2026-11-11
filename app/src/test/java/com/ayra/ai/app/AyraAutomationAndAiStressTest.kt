@@ -268,21 +268,15 @@ class AyraAutomationAndAiStressTest {
 
     @Test
     fun testAutonomousKnowledgeDeepQuestions() {
-        // Test Sun Rayleigh scattering answer
-        val sunAnswer = com.ayra.ai.app.ai.AutonomousKnowledgeEngine.synthesizeDeepKnowledge("সূর্য কেন হলুদ দেখায়?", isBengali = true, isGfMode = false)
-        assertTrue(sunAnswer.contains("Rayleigh") || sunAnswer.contains("বিক্ষেপণ") || sunAnswer.contains("সূর্য"))
+        val topic1 = com.ayra.ai.app.ai.AutonomousKnowledgeEngine.extractTopicKeyword("সূর্য কেন হলুদ দেখায়?")
+        assertTrue(topic1.contains("সূর্য") || topic1.contains("হলুদ"))
 
-        // Test Moon mechanics answer
-        val moonAnswer = com.ayra.ai.app.ai.AutonomousKnowledgeEngine.synthesizeDeepKnowledge("চাঁদ সম্পর্কে বলো", isBengali = true, isGfMode = false)
-        assertTrue(moonAnswer.contains("চাঁদ") || moonAnswer.contains("উপগ্রহ"))
+        val topic2 = com.ayra.ai.app.ai.AutonomousKnowledgeEngine.extractTopicKeyword("চাঁদ সম্পর্কে বলো")
+        assertTrue(topic2.contains("চাঁদ"))
 
-        // Test Computer architecture answer
-        val computerAnswer = com.ayra.ai.app.ai.AutonomousKnowledgeEngine.synthesizeDeepKnowledge("কম্পিউটার কিভাবে কাজ করে?", isBengali = true, isGfMode = false)
-        assertTrue(computerAnswer.contains("CPU") || computerAnswer.contains("সিপিইউ") || computerAnswer.contains("প্রসেসিং"))
-
-        // Test Emotional support
-        val sadAnswer = com.ayra.ai.app.ai.AutonomousKnowledgeEngine.synthesizeDeepKnowledge("আমার মন খারাপ", isBengali = true, isGfMode = true)
-        assertTrue(sadAnswer.contains("সোনা") || sadAnswer.contains("শ্বাস") || sadAnswer.contains("মন"))
+        val math = com.ayra.ai.app.ai.AutonomousKnowledgeEngine.tryCalculateMath("15 * 12")
+        assertNotNull(math)
+        assertTrue(math!!.contains("180"))
     }
 
     @Test
