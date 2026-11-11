@@ -180,9 +180,9 @@ fun SolarSystem3DCanvas(
         )
     }
 
-    // Dense Asteroid Belt between Mars (0.47) and Jupiter (0.65)
+    // Optimized Asteroid Belt between Mars (0.47) and Jupiter (0.65)
     val asteroids = remember {
-        List(140) {
+        List(35) {
             val dist = 0.52f + (Math.random() * 0.09f).toFloat()
             val initAngle = (Math.random() * 360f).toFloat()
             val speed = 0.38f + (Math.random() * 0.12f).toFloat()
@@ -193,9 +193,9 @@ fun SolarSystem3DCanvas(
         }
     }
 
-    // Distant background starfield
+    // Distant background starfield (optimized)
     val stars = remember {
-        List(95) {
+        List(35) {
             val sx = (Math.random() * 1200).toFloat()
             val sy = (Math.random() * 2200).toFloat()
             val sr = (0.6f + Math.random() * 1.8f).toFloat()
@@ -241,20 +241,13 @@ fun SolarSystem3DCanvas(
             )
         }
 
-        // 3. Render Orbital Ellipses with delicate cosmic glow
+        // 3. Render Orbital Ellipses with hardware accelerated drawOval
         planets.forEach { planet ->
             val orbitRadius = maxOrbitRadius * planet.distanceRatio
-            val orbitPath = Path()
-            val steps = 72
-            for (i in 0..steps) {
-                val theta = (i * 2 * PI / steps)
-                val ex = centerX + (orbitRadius * cos(theta)).toFloat()
-                val ey = centerY + (orbitRadius * sin(theta) * cosPitch).toFloat()
-                if (i == 0) orbitPath.moveTo(ex, ey) else orbitPath.lineTo(ex, ey)
-            }
-            drawPath(
-                path = orbitPath,
+            drawOval(
                 color = Color(0x2200FFFF),
+                topLeft = Offset(centerX - orbitRadius, centerY - orbitRadius * cosPitch),
+                size = Size(orbitRadius * 2f, orbitRadius * 2f * cosPitch),
                 style = Stroke(width = 0.85f)
             )
         }

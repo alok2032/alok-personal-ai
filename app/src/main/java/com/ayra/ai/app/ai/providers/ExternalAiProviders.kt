@@ -100,6 +100,14 @@ class ExternalAiProviders(private val context: Context? = null) {
     val circuitBreaker = ProviderCircuitBreaker()
 
     companion object {
+        fun resolveGeminiModel(model: String): String {
+            return when (model) {
+                "gemini-2.5-flash" -> "gemini-2.0-flash"
+                "gemini-2.5-pro" -> "gemini-1.5-pro"
+                else -> model
+            }
+        }
+
         private val dynamicModelCache = java.util.concurrent.ConcurrentHashMap<AiProviderType, List<AiModelInfo>>()
 
         val CURATED_MODELS = listOf(
@@ -359,8 +367,11 @@ class ExternalAiProviders(private val context: Context? = null) {
 
     // --- 1. Google Gemini Implementation ---
 
+    internal fun resolveGeminiModel(model: String): String = Companion.resolveGeminiModel(model)
+
     private fun callGemini(turns: List<ChatTurn>, model: String, apiKey: String, withSearchGrounding: Boolean): String {
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent"
+        val actualModel = resolveGeminiModel(model)
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:generateContent"
         val requestJson = JSONObject().apply {
             val systemTurn = turns.firstOrNull { it.role == "system" }
             if (systemTurn != null && systemTurn.content.isNotBlank()) {
@@ -412,13 +423,24 @@ class ExternalAiProviders(private val context: Context? = null) {
         val request = reqBuilder.build()
 
         return httpClient.newCall(request).execute().use { response ->
-            if (response.code == 404 && model != "gemini-2.5-flash") {
-                // Dynamic fallback from unlisted/retired model to latest stable flash model
-                return callGemini(turns, "gemini-2.5-flash", apiKey, withSearchGrounding)
+            if (response.code == 400 && withSearchGrounding) {
+                // Grounding might not be permitted for this key/tier. Retry without search grounding
+                return callGemini(turns, model, apiKey, withSearchGrounding = false)
+            }
+            if (response.code == 404) {
+                // Dynamic fallback from unlisted/retired model to latest stable flash models
+                if (actualModel != "gemini-1.5-flash") {
+                    return callGemini(turns, "gemini-1.5-flash", apiKey, withSearchGrounding)
+                } else {
+                    return callGemini(turns, "gemini-2.0-flash-lite", apiKey, withSearchGrounding)
+                }
             }
             if (response.code == 429) throw ProviderError.RateLimited("Gemini quota exceeded.")
-            if (response.code == 400 || response.code == 403) throw ProviderError.Unauthorized(AiProviderType.GEMINI)
-            if (!response.isSuccessful) throw ProviderError.ServerError(response.code, response.message)
+            if (response.code == 401 || response.code == 403) throw ProviderError.Unauthorized(AiProviderType.GEMINI)
+            if (!response.isSuccessful) {
+                val errBody = response.body?.string() ?: ""
+                throw ProviderError.ServerError(response.code, errBody.ifBlank { response.message })
+            }
 
             val body = response.body?.string() ?: ""
             val json = JSONObject(body)
@@ -435,7 +457,8 @@ class ExternalAiProviders(private val context: Context? = null) {
     }
 
     private suspend fun streamGemini(turns: List<ChatTurn>, model: String, apiKey: String, collector: kotlinx.coroutines.flow.FlowCollector<String>) {
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:streamGenerateContent?alt=sse"
+        val actualModel = resolveGeminiModel(model)
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:streamGenerateContent?alt=sse"
         val requestJson = JSONObject().apply {
             val systemTurn = turns.firstOrNull { it.role == "system" }
             if (systemTurn != null) {
@@ -464,6 +487,16 @@ class ExternalAiProviders(private val context: Context? = null) {
         val request = reqBuilder.build()
 
         httpClient.newCall(request).execute().use { response ->
+            if (response.code == 404 && actualModel != "gemini-1.5-flash") {
+                return streamGemini(turns, "gemini-1.5-flash", apiKey, collector)
+            }
+            if (response.code == 429) throw ProviderError.RateLimited("Gemini quota exceeded.")
+            if (response.code == 401 || response.code == 403) throw ProviderError.Unauthorized(AiProviderType.GEMINI)
+            if (!response.isSuccessful) {
+                val errBody = response.body?.string() ?: ""
+                throw ProviderError.ServerError(response.code, errBody.ifBlank { response.message })
+            }
+
             val reader = BufferedReader(InputStreamReader(response.body?.byteStream() ?: return, StandardCharsets.UTF_8))
             var line: String?
             while (reader.readLine().also { line = it } != null) {

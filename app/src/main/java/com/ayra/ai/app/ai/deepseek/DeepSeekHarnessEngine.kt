@@ -108,16 +108,21 @@ class DeepSeekHarnessEngine(private val context: Context? = null) {
             }
         }
 
-        // 3. Try Local Ollama server
-        val localRes = queryLocalOllama(prompt, systemInstruction)
-        if (localRes != null) {
-            val (thinking, answer) = parseThinkingChain(localRes)
-            return@withContext HarnessResult(
-                finalAnswer = answer,
-                reasoningChain = thinking,
-                modelUsed = "DeepSeek-R1 (Local Ollama)",
-                latencyMs = System.currentTimeMillis() - start
-            )
+        // 3. Try Local Ollama server if user configured host or custom endpoint
+        val customUrl = context?.let { AyraPreferences.getCustomEndpointUrl(it).trim() } ?: ""
+        val ollamaHost = context?.let { AyraPreferences.getOllamaHost(it).trim() } ?: ""
+        val hasCustomOllama = customUrl.isNotBlank() || (ollamaHost.isNotBlank() && ollamaHost != "http://10.0.2.2:11434")
+        if (hasCustomOllama) {
+            val localRes = queryLocalOllama(prompt, systemInstruction)
+            if (localRes != null) {
+                val (thinking, answer) = parseThinkingChain(localRes)
+                return@withContext HarnessResult(
+                    finalAnswer = answer,
+                    reasoningChain = thinking,
+                    modelUsed = "DeepSeek-R1 (Local Ollama)",
+                    latencyMs = System.currentTimeMillis() - start
+                )
+            }
         }
 
         // 4. Fallback to external AI providers or honest message

@@ -132,7 +132,7 @@ object AiMediaPromptSynthesizer {
                 "You are an expert prompt engineer for DALL-E 3 and Midjourney v6. Convert this visual request into a single sentence master photographic English prompt with subject details, lens, lighting, and textures. Output ONLY the English prompt in one line, no markdown, no quotes."
             }
 
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
             val requestJson = JSONObject().apply {
                 put("contents", JSONArray().put(JSONObject().apply {
                     put("parts", JSONArray().put(JSONObject().apply {

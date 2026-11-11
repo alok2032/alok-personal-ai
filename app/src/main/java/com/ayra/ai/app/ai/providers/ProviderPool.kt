@@ -241,7 +241,25 @@ class ProviderPool(private val context: Context? = null) {
                         val model = externalProviders.getDefaultModelForProvider(provider)
                         val key = getEffectiveKey(provider)
 
-                        val respText = externalProviders.callSpecificProviderPublic(provider, model, turns, key, true)
+                        try {
+                            externalProviders.streamChatResponse(
+                                prompt = request.prompt,
+                                systemPrompt = resolveSystemPrompt(request),
+                                history = request.history,
+                                preferredProvider = provider,
+                                preferredModelId = model
+                            ).collect { token ->
+                                tokensAccumulator.append(token)
+                                collector.emit(AyraStreamEvent.Token(token))
+                            }
+                        } catch (_: Exception) {}
+
+                        val respText = if (tokensAccumulator.isNotBlank()) {
+                            tokensAccumulator.toString()
+                        } else {
+                            externalProviders.callSpecificProviderPublic(provider, model, turns, key, true)
+                        }
+
                         if (respText.isNotBlank()) {
                             circuitBreaker.recordSuccess(provider)
                             val finalResponse = ProviderResponse(
@@ -407,19 +425,25 @@ class ProviderPool(private val context: Context? = null) {
     private fun mapExceptionToAyraError(provider: AiProviderType, e: Exception): AyraError {
         val msg = e.message ?: ""
         return when {
-            msg.contains("401") || msg.contains("403") || msg.contains("Unauthorized") || msg.contains("Invalid API key") ->
+            e is ProviderError.Unauthorized || msg.contains("401") || msg.contains("403") || msg.contains("Unauthorized") || msg.contains("Invalid API key") ->
                 AyraError.AuthError(provider, msg)
-            msg.contains("429") || msg.contains("quota") || msg.contains("rate limit") ->
+            e is ProviderError.RateLimited || msg.contains("429") || msg.contains("quota") || msg.contains("rate limit") ->
                 AyraError.RateLimited(provider)
-            e is java.net.SocketTimeoutException || msg.contains("timeout") || msg.contains("timed out") ->
+            e is ProviderError.Timeout || e is java.net.SocketTimeoutException || msg.contains("timeout") || msg.contains("timed out") ->
                 AyraError.Timeout(provider, msg)
-            e is java.net.UnknownHostException || msg.contains("Unable to resolve host") || msg.contains("No internet") ->
+            e is ProviderError.NetworkFailure || e is java.net.UnknownHostException || msg.contains("Unable to resolve host") || msg.contains("No internet") ->
                 AyraError.NoNetwork(msg)
+            e is ProviderError.ServerError ->
+                AyraError.ProviderDown(provider, Regex("HTTP\\s*(\\d+)").find(e.displayMessage)?.groupValues?.get(1)?.toIntOrNull() ?: 500)
+            msg.contains("404") || msg.contains("Not Found") ->
+                AyraError.ProviderDown(provider, 404)
+            msg.contains("400") || msg.contains("Bad Request") ->
+                AyraError.ProviderDown(provider, 400)
             msg.contains("500") || msg.contains("502") || msg.contains("503") || msg.contains("504") ->
                 AyraError.ProviderDown(provider, 500)
             msg.contains("safety") || msg.contains("blocked") || msg.contains("content policy") ->
                 AyraError.ContentBlocked(msg)
-            else -> AyraError.ProviderDown(provider, 520)
+            else -> AyraError.ProviderDown(provider, 500)
         }
     }
 }

@@ -61,14 +61,64 @@ class Qwen38UncensoredEngine(private val context: Context? = null) {
     ): QwenResponse = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
         val customUrl = context?.let { AyraPreferences.getCustomEndpointUrl(it) }?.trim() ?: ""
+        val ollamaHost = context?.let { AyraPreferences.getOllamaHost(it) }?.trim() ?: ""
+        val hasCustomOllama = customUrl.isNotBlank() || (ollamaHost.isNotBlank() && ollamaHost != "http://10.0.2.2:11434")
+        val openRouterKey = AyraPreferences.getEffectiveOpenRouterKey(context)
+
+        // 1. Try OpenRouter Qwen first if key is configured and user has not configured custom local server
+        if (openRouterKey.isNotBlank() && !hasCustomOllama) {
+            try {
+                val orPayload = JSONObject().apply {
+                    put("model", OPENROUTER_QWEN_MODEL)
+                    put("messages", JSONArray().apply {
+                        put(JSONObject().apply {
+                            put("role", "system")
+                            put("content", systemInstruction)
+                        })
+                        put(JSONObject().apply {
+                            put("role", "user")
+                            put("content", prompt)
+                        })
+                    })
+                }
+
+                val orReq = Request.Builder()
+                    .url("https://openrouter.ai/api/v1/chat/completions")
+                    .header("Authorization", "Bearer $openRouterKey")
+                    .header("HTTP-Referer", "https://ayra.ai/app")
+                    .header("X-Title", "Ayra AI Qwen Uncensored")
+                    .post(orPayload.toString().toRequestBody("application/json".toMediaType()))
+                    .build()
+
+                httpClient.newCall(orReq).execute().use { resp ->
+                    if (resp.isSuccessful) {
+                        val body = resp.body?.string() ?: ""
+                        val root = JSONObject(body)
+                        val choices = root.optJSONArray("choices")
+                        if (choices != null && choices.length() > 0) {
+                            val msg = choices.getJSONObject(0).optJSONObject("message")?.optString("content", "") ?: ""
+                            if (msg.isNotBlank()) {
+                                return@withContext QwenResponse(
+                                    text = msg.trim(),
+                                    modelUsed = "Qwen 2.5/3.8 Frontier (OpenRouter) 🔓",
+                                    latencyMs = System.currentTimeMillis() - start
+                                )
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
         val baseUrl = if (customUrl.isNotBlank()) {
             if (customUrl.endsWith("/")) customUrl else "$customUrl/"
         } else {
             "http://10.0.2.2:11434/"
         }
 
-        // 1. Try Ollama native /api/chat endpoint
-        try {
+        // 2. Try Ollama native /api/chat endpoint if configured or local
+        if (hasCustomOllama) {
+            try {
             val jsonPayload = JSONObject().apply {
                 put("model", OLLAMA_DEFAULT_SERVING)
                 put("stream", false)
@@ -155,51 +205,6 @@ class Qwen38UncensoredEngine(private val context: Context? = null) {
                     }
                 }
             }
-        } catch (_: Exception) {}
-
-        // 3. Try OpenRouter Qwen 2.5/3.8 if OpenRouter key is configured
-        val openRouterKey = AyraPreferences.getEffectiveOpenRouterKey(context)
-        if (openRouterKey.isNotBlank()) {
-            try {
-                val orPayload = JSONObject().apply {
-                    put("model", OPENROUTER_QWEN_MODEL)
-                    put("messages", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("role", "system")
-                            put("content", systemInstruction)
-                        })
-                        put(JSONObject().apply {
-                            put("role", "user")
-                            put("content", prompt)
-                        })
-                    })
-                }
-
-                val orReq = Request.Builder()
-                    .url("https://openrouter.ai/api/v1/chat/completions")
-                    .header("Authorization", "Bearer $openRouterKey")
-                    .header("HTTP-Referer", "https://ayra.ai/app")
-                    .header("X-Title", "Ayra AI Qwen Uncensored")
-                    .post(orPayload.toString().toRequestBody("application/json".toMediaType()))
-                    .build()
-
-                httpClient.newCall(orReq).execute().use { resp ->
-                    if (resp.isSuccessful) {
-                        val body = resp.body?.string() ?: ""
-                        val root = JSONObject(body)
-                        val choices = root.optJSONArray("choices")
-                        if (choices != null && choices.length() > 0) {
-                            val msg = choices.getJSONObject(0).optJSONObject("message")?.optString("content", "") ?: ""
-                            if (msg.isNotBlank()) {
-                                return@withContext QwenResponse(
-                                    text = msg.trim(),
-                                    modelUsed = "Qwen 2.5/3.8 Frontier (OpenRouter) 🔓",
-                                    latencyMs = System.currentTimeMillis() - start
-                                )
-                            }
-                        }
-                    }
-                }
             } catch (_: Exception) {}
         }
 

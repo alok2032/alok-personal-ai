@@ -59,7 +59,12 @@ class GeminiCliEngine(private val context: Context? = null) {
 
         val start = System.currentTimeMillis()
         try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+            val actualModel = when (model) {
+                "gemini-2.5-flash" -> "gemini-2.0-flash"
+                "gemini-2.5-pro" -> "gemini-1.5-pro"
+                else -> model
+            }
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:generateContent?key=$apiKey"
 
             val partsArray = JSONArray()
             partsArray.put(JSONObject().apply { put("text", prompt) })

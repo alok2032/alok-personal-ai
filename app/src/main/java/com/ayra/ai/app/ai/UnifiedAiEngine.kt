@@ -153,23 +153,151 @@ class UnifiedAiEngine(private val context: Context? = null) {
 
         fun getCachedResponse(key: String): AiResponse? = memoryResponseCache[key]
 
-        fun isCyberTerminalIntent(text: String): Boolean =
-            AyraIntentClassifier.classifyIntent(text) == AyraToolIntent.TERMINAL
+        fun isEducationalQuestion(text: String): Boolean {
+            val lower = text.lowercase().trim()
+            val isExplicitCreation = lower.contains("বানাও") || lower.contains("বানিয়ে") || lower.contains("আঁকো") ||
+                    lower.contains("এঁকে") || lower.contains("create") || lower.contains("generate") ||
+                    lower.contains("draw a") || lower.contains("toiri") || lower.contains("banao")
 
-        fun isPdfStudioIntent(text: String, docText: String? = null, imageBase64: String? = null): Boolean =
-            AyraIntentClassifier.classifyIntent(text) == AyraToolIntent.PDF
+            if (isExplicitCreation && !lower.contains("what is") && !lower.contains("how does") && !lower.contains("tips of") && !lower.contains("history of")) return false
 
-        fun isVideoGenerationIntent(text: String): Boolean = false
+            return lower.startsWith("what is ") || lower.startsWith("what's ") || lower.startsWith("how does ") ||
+                    lower.startsWith("why is ") || lower.startsWith("why do ") || lower.contains("কাকে বলে") ||
+                    lower.contains("সংজ্ঞা") || lower.contains("explain ") || lower.contains("difference between") ||
+                    lower.contains("পার্থক্য") || lower.contains("formula of") || lower.contains("meaning of") ||
+                    lower.startsWith("tell me about") || lower.contains("history of") || lower.startsWith("how do i")
+        }
 
-        fun isImageGenerationIntent(text: String): Boolean =
-            AyraIntentClassifier.classifyIntent(text) == AyraToolIntent.IMAGE
+        fun isCyberTerminalIntent(text: String): Boolean {
+            if (AyraIntentClassifier.classifyIntent(text) == AyraToolIntent.TERMINAL) return true
+            if (isEducationalQuestion(text)) return false
+            val lower = text.lowercase().trim()
+            if (lower.startsWith("ping ") || lower.startsWith("traceroute ") || lower.startsWith("dig ") ||
+                lower.startsWith("whois ") || lower.startsWith("nmap ") || lower.startsWith("hash ") ||
+                lower.startsWith("cve ") || lower.startsWith("owasp ")) return true
+            return lower.contains("cyber terminal") || lower.contains("security terminal") ||
+                    lower.contains("cyber security terminal") || lower.contains("terminal & defensive")
+        }
 
-        fun isSongGenerationIntent(text: String): Boolean = false
+        fun isPdfStudioIntent(text: String, docText: String? = null, imageBase64: String? = null): Boolean {
+            if (AyraIntentClassifier.classifyIntent(text) == AyraToolIntent.PDF) return true
+            val lower = text.lowercase().trim()
+            val hasPdfTerm = lower.contains("pdf") || lower.contains("পিডিএফ") || lower.contains("document") || lower.contains("ডকুমেন্ট")
+            val hasAction = lower.contains("banao") || lower.contains("বানাও") || lower.contains("create") ||
+                    lower.contains("make") || lower.contains("generate") || lower.contains("new pdf") ||
+                    lower.contains("নতুন পিডিএফ") || lower.contains("edit") || lower.contains("এডিট") ||
+                    lower.contains("convert") || lower.contains("রূপান্তর") || lower.contains("format") ||
+                    lower.contains("ফরম্যাট") || lower.contains("download") || lower.contains("save") ||
+                    lower.contains("banano") || lower.contains("বানানো")
 
-        fun is3dModelIntent(text: String): Boolean = false
+            if (hasPdfTerm && hasAction && !isEducationalQuestion(text)) return true
+            if (hasPdfTerm && (lower.startsWith("pdf ") || lower.startsWith("পিডিএফ "))) return true
+            if (docText != null && (lower.contains("edit") || lower.contains("এডিট") || lower.contains("change") || lower.contains("convert") || lower.contains("format"))) return true
+            if (imageBase64 != null && hasPdfTerm) return true
+            return false
+        }
+
+        fun isVideoGenerationIntent(text: String): Boolean {
+            if (isEducationalQuestion(text)) return false
+            val lower = text.lowercase().trim()
+            if (lower.contains("video game") || lower.contains("videogame")) return false
+            if (lower.startsWith("video:") || lower.startsWith("ভিডিও:")) return true
+
+            val hasVideoTerm = lower.contains("video") || lower.contains("ভিডিও") ||
+                    lower.contains("animation") || lower.contains("motion clip") ||
+                    lower.contains("reels") || lower.contains("shorts") || lower.contains("cinematic clip")
+            if (!hasVideoTerm) return false
+
+            val hasCreationSignal = lower.contains("make") || lower.contains("create") || lower.contains("generate") ||
+                    lower.contains("banao") || lower.contains("বানাও") || lower.contains("তৈরি") || lower.contains("বানিয়ে") ||
+                    lower.contains("banai") || lower.contains("banie") || lower.contains("chai") || lower.contains("চাই") ||
+                    lower.contains("dao") || lower.contains("দাও") || lower.contains("of ") || lower.contains("dekhao") ||
+                    lower.contains("দেখা") || lower.startsWith("video") || lower.contains("clip") || lower.contains("ai video") ||
+                    lower.contains("motion") || lower.contains("edit") || lower.contains("এডিট") || lower.contains("banano") ||
+                    lower.contains("বানানো") || lower.contains("render") || lower.contains("রেন্ডার")
+
+            return hasCreationSignal
+        }
+
+        fun isImageGenerationIntent(text: String): Boolean {
+            if (AyraIntentClassifier.classifyIntent(text) == AyraToolIntent.IMAGE) return true
+            if (isEducationalQuestion(text)) return false
+            val lower = text.lowercase().trim()
+
+            if (lower.contains("photosynthesis") || lower.contains("সালোকসংশ্লেষণ") || lower.contains("photodiode") || lower.contains("photon") || lower.contains("tips of") || lower.contains("tips for")) {
+                return false
+            }
+
+            if (lower.startsWith("image:") || lower.startsWith("photo:") || lower.startsWith("pic:") ||
+                lower.startsWith("ছবি:") || lower.startsWith("ফটো:") || lower.startsWith("পিক:") ||
+                lower.startsWith("draw:") || lower.startsWith("paint:")) {
+                return true
+            }
+
+            if (lower.startsWith("draw ") || lower.startsWith("paint ") || lower.startsWith("sketch ") ||
+                lower.contains("আঁকো") || lower.contains("এঁকে দাও") || lower.contains("আঁক") ||
+                lower.contains("ছবি আঁক") || lower.contains("chobi akho") || lower.contains("akho")) {
+                return true
+            }
+
+            val hasImageTerm = lower.contains("photo") || lower.contains("image") || lower.contains("picture") ||
+                    lower.contains("pic") || lower.contains("wallpaper") || lower.contains("portrait") ||
+                    lower.contains("sketch") || lower.contains("drawing") || lower.contains("artwork") ||
+                    lower.contains("illustration") || lower.contains("chobi") || lower.contains("ছবি") ||
+                    lower.contains("ফটো") || lower.contains("পিক") || lower.contains("পিকচার") ||
+                    lower.contains("চিত্র") || lower.contains("দৃশ্য")
+            if (!hasImageTerm) return false
+
+            val hasCreationSignal = lower.contains("make") || lower.contains("create") || lower.contains("generate") ||
+                    lower.contains("draw") || lower.contains("paint") || lower.contains("render") ||
+                    lower.contains("banao") || lower.contains("বানাও") || lower.contains("আঁকো") || lower.contains("এঁকে") ||
+                    lower.contains("akho") || lower.contains("enke") || lower.contains("toiri") || lower.contains("তৈরি") ||
+                    lower.contains("chai") || lower.contains("চাই") || lower.contains("dao") || lower.contains("দাও") ||
+                    lower.contains("dekhao") || lower.contains("দেখাও") || lower.contains("of ") || lower.startsWith("photo")
+
+            return hasCreationSignal
+        }
+
+        fun isSongGenerationIntent(text: String): Boolean {
+            if (isEducationalQuestion(text)) return false
+            val lower = text.lowercase().trim()
+            val hasMusicTerm = lower.contains("gaan") || lower.contains("গান") ||
+                    lower.contains("song") || lower.contains("music") || lower.contains("মিউজিক") ||
+                    lower.contains("tune") || lower.contains("সুর") || lower.contains("beat") || lower.contains("বিট")
+            if (!hasMusicTerm) return false
+
+            return lower.contains("banao") || lower.contains("বানাও") || lower.contains("banano") ||
+                    lower.contains("বানানো") || lower.contains("render") || lower.contains("রেন্ডার") ||
+                    lower.contains("compose") || lower.contains("লিখ") || lower.contains("লেখ") ||
+                    lower.contains("make") || lower.contains("create") || lower.contains("generate") ||
+                    lower.contains("play") || lower.contains("বাজাও") || lower.startsWith("song ") ||
+                    lower.startsWith("music ") || lower.startsWith("গান ") || lower.startsWith("মিউজিক ")
+        }
+
+        fun is3dModelIntent(text: String): Boolean {
+            if (isEducationalQuestion(text)) return false
+            val lower = text.lowercase().trim()
+
+            if (lower.startsWith("3d:") || lower.startsWith("cad:")) return true
+
+            val has3dTerm = lower.contains("3d") || lower.contains("three d") ||
+                    Regex("\\bcad\\b").containsMatchIn(lower) ||
+                    lower.contains("ত্রিমাত্রিক") || lower.contains("hologram") || lower.contains("হোলোগ্রাম")
+            if (!has3dTerm) return false
+
+            return lower.contains("model") || lower.contains("মডেল") || lower.contains("banao") ||
+                    lower.contains("বানাও") || lower.contains("make") || lower.contains("create") ||
+                    lower.contains("generate") || lower.contains("toiri") || lower.contains("তৈরি") ||
+                    lower.contains("object") || lower.contains("mesh") || lower.contains("shape") ||
+                    lower.contains("car") || lower.contains("গাড়ি") || lower.contains("robot") ||
+                    lower.contains("রোবট") || lower.contains("ship") || lower.contains("মহাকাশ") ||
+                    lower.contains("diamond") || lower.contains("sphere") || lower.contains("cube") ||
+                    lower.startsWith("3d") || lower.contains("3d তে") || lower.contains("3d te")
+        }
 
         fun isDeepResearchIntent(text: String): Boolean =
-            AyraIntentClassifier.classifyIntent(text) == AyraToolIntent.DEEP_RESEARCH
+            AyraIntentClassifier.classifyIntent(text) == AyraToolIntent.DEEP_RESEARCH ||
+                    (text.trim().lowercase().startsWith("deep research") && !isEducationalQuestion(text))
     }
 
     // Robust enterprise connection timeouts for big model reasoning and multimodal payloads
@@ -241,17 +369,32 @@ class UnifiedAiEngine(private val context: Context? = null) {
         val detectedIntent = AyraIntentClassifier.classifyIntent(cleanPrompt)
 
         // 1. Explicit PDF Generation Intent
-        if (detectedIntent == AyraToolIntent.PDF) {
+        if (detectedIntent == AyraToolIntent.PDF || isPdfStudioIntent(cleanPrompt, attachedDocumentText, attachedImageBase64)) {
             return@withContext executePdfStudioAction(cleanPrompt, attachedDocumentText, attachedDocumentName, attachedImageBase64)
         }
 
         // 2. Explicit Image Generation Intent
-        if (detectedIntent == AyraToolIntent.IMAGE) {
+        if (detectedIntent == AyraToolIntent.IMAGE || isImageGenerationIntent(cleanPrompt)) {
             return@withContext generateImageCraft(cleanPrompt)
         }
 
+        // 2b. Video Generation Intent
+        if (isVideoGenerationIntent(cleanPrompt)) {
+            return@withContext generateVideoCraft(cleanPrompt)
+        }
+
+        // 2c. Song / Music Generation Intent
+        if (isSongGenerationIntent(cleanPrompt)) {
+            return@withContext generateSongCraft(cleanPrompt)
+        }
+
+        // 2d. 3D Model Intent
+        if (is3dModelIntent(cleanPrompt)) {
+            return@withContext generate3dModelCraft(cleanPrompt)
+        }
+
         // 3. Explicit Deep Research Intent
-        if (detectedIntent == AyraToolIntent.DEEP_RESEARCH) {
+        if (detectedIntent == AyraToolIntent.DEEP_RESEARCH || isDeepResearchIntent(cleanPrompt)) {
             return@withContext executeDeepResearch(cleanPrompt, effectivePrompt, attachedImageBase64)
         }
 
@@ -264,8 +407,8 @@ class UnifiedAiEngine(private val context: Context? = null) {
         val isBengali = cleanPrompt.any { it in '\u0980'..'\u09FF' }
         val isGfMode = currentPersona == "GF_COMPANION"
 
-        // 5. Cyber Terminal Intent (explicit diagnostic command only)
-        if (detectedIntent == AyraToolIntent.TERMINAL) {
+        // 5. Cyber Terminal Intent
+        if (detectedIntent == AyraToolIntent.TERMINAL || isCyberTerminalIntent(cleanPrompt)) {
             val initialCmd = extractTerminalInitialCommand(cleanPrompt)
             val reply = if (isBengali) {
                 if (isGfMode) {
@@ -759,37 +902,14 @@ class UnifiedAiEngine(private val context: Context? = null) {
     }
 
     // --- Strict Intent Checkers: Avoid False Positives on Questions ---
-    private fun isEducationalQuestion(text: String): Boolean {
-        val lower = text.lowercase().trim()
-        val isExplicitCreation = lower.contains("বানাও") || lower.contains("বানিয়ে") || lower.contains("আঁকো") ||
-                lower.contains("এঁকে") || lower.contains("create") || lower.contains("generate") ||
-                lower.contains("make a") || lower.contains("draw a") || lower.contains("toiri") || lower.contains("banao")
+    private fun isEducationalQuestion(text: String): Boolean = Companion.isEducationalQuestion(text)
 
-        if (isExplicitCreation) return false
-
-        return lower.startsWith("what is ") || lower.startsWith("what's ") || lower.startsWith("how does ") ||
-                lower.startsWith("why is ") || lower.startsWith("why do ") || lower.contains("কাকে বলে") ||
-                lower.contains("সংজ্ঞা") || lower.contains("explain ") || lower.contains("difference between") ||
-                lower.contains("পার্থক্য") || lower.contains("formula of") || lower.contains("meaning of")
-    }
+    // --- 0a. Cyber Terminal Intent ---
+    private fun isCyberTerminalIntent(text: String): Boolean = Companion.isCyberTerminalIntent(text)
 
     // --- 0b. PDF & Document Studio Intent ---
-    private fun isPdfStudioIntent(text: String, docText: String?, imageBase64: String?): Boolean {
-        val lower = text.lowercase().trim()
-        val hasPdfTerm = lower.contains("pdf") || lower.contains("পিডিএফ") || lower.contains("document") || lower.contains("ডকুমেন্ট")
-        val hasAction = lower.contains("banao") || lower.contains("বানাও") || lower.contains("create") ||
-                lower.contains("make") || lower.contains("generate") || lower.contains("new pdf") ||
-                lower.contains("নতুন পিডিএফ") || lower.contains("edit") || lower.contains("এডিট") ||
-                lower.contains("convert") || lower.contains("রূপান্তর") || lower.contains("format") ||
-                lower.contains("ফরম্যাট") || lower.contains("download") || lower.contains("save") ||
-                lower.contains("banano") || lower.contains("বানানো")
-
-        if (hasPdfTerm && hasAction) return true
-        if (hasPdfTerm && (lower.startsWith("pdf ") || lower.startsWith("পিডিএফ "))) return true
-        if (docText != null && (lower.contains("edit") || lower.contains("এডিট") || lower.contains("change") || lower.contains("convert") || lower.contains("format"))) return true
-        if (imageBase64 != null && hasPdfTerm) return true
-        return false
-    }
+    private fun isPdfStudioIntent(text: String, docText: String?, imageBase64: String?): Boolean =
+        Companion.isPdfStudioIntent(text, docText, imageBase64)
 
     private fun executePdfStudioAction(
         prompt: String,
@@ -870,71 +990,10 @@ class UnifiedAiEngine(private val context: Context? = null) {
     }
 
     // --- 1. Video Generation Intent ---
-    private fun isVideoGenerationIntent(text: String): Boolean {
-        if (isEducationalQuestion(text)) return false
-        val lower = text.lowercase().trim()
-
-        if (lower.startsWith("video:") || lower.startsWith("ভিডিও:")) return true
-
-        val hasVideoTerm = lower.contains("video") || lower.contains("ভিডিও") ||
-                lower.contains("animation") || lower.contains("motion clip") ||
-                lower.contains("reels") || lower.contains("shorts") || lower.contains("cinematic clip")
-        if (!hasVideoTerm) return false
-
-        val hasCreationSignal = lower.contains("make") || lower.contains("create") || lower.contains("generate") ||
-                lower.contains("banao") || lower.contains("বানাও") || lower.contains("তৈরি") || lower.contains("বানিয়ে") ||
-                lower.contains("banai") || lower.contains("banie") || lower.contains("chai") || lower.contains("চাই") ||
-                lower.contains("dao") || lower.contains("দাও") || lower.contains("of ") || lower.contains("dekhao") ||
-                lower.contains("দেখা") || lower.startsWith("video") || lower.contains("clip") || lower.contains("ai video") ||
-                lower.contains("motion") || lower.contains("edit") || lower.contains("এডিট") || lower.contains("banano") ||
-                lower.contains("বানানো") || lower.contains("render") || lower.contains("রেন্ডার")
-
-        return hasCreationSignal
-    }
+    private fun isVideoGenerationIntent(text: String): Boolean = Companion.isVideoGenerationIntent(text)
 
     // --- 2. Image / Photo Generation Intent ---
-    private fun isImageGenerationIntent(text: String): Boolean {
-        if (isEducationalQuestion(text)) return false
-        val lower = text.lowercase().trim()
-
-        if (lower.contains("photosynthesis") || lower.contains("সালোকসংশ্লেষণ") || lower.contains("photodiode") || lower.contains("photon")) {
-            return false
-        }
-
-        if (lower.startsWith("image:") || lower.startsWith("photo:") || lower.startsWith("pic:") ||
-            lower.startsWith("ছবি:") || lower.startsWith("ফটো:") || lower.startsWith("পিক:") ||
-            lower.startsWith("draw:") || lower.startsWith("paint:")) {
-            return true
-        }
-
-        // Direct drawing / painting triggers even without explicit word "photo"
-        if (lower.startsWith("draw ") || lower.startsWith("paint ") || lower.startsWith("sketch ") ||
-            lower.contains("আঁকো") || lower.contains("এঁকে দাও") || lower.contains("আঁক") ||
-            lower.contains("ছবি আঁক") || lower.contains("chobi akho") || lower.contains("akho")) {
-            return true
-        }
-
-        val hasImageTerm = lower.contains("photo") || lower.contains("image") || lower.contains("picture") ||
-                lower.contains("pic") || lower.contains("wallpaper") || lower.contains("portrait") ||
-                lower.contains("sketch") || lower.contains("drawing") || lower.contains("artwork") ||
-                lower.contains("illustration") || lower.contains("chobi") || lower.contains("ছবি") ||
-                lower.contains("ফটো") || lower.contains("পিক") || lower.contains("পিকচার") ||
-                lower.contains("চিত্র") || lower.contains("দৃশ্য")
-        if (!hasImageTerm) return false
-
-        val hasCreationSignal = lower.contains("make") || lower.contains("create") || lower.contains("generate") ||
-                lower.contains("draw") || lower.contains("paint") || lower.contains("render") ||
-                lower.contains("banao") || lower.contains("বানাও") || lower.contains("আঁকো") || lower.contains("এঁকে") ||
-                lower.contains("akho") || lower.contains("enke") || lower.contains("toiri") || lower.contains("তৈরি") ||
-                lower.contains("chai") || lower.contains("চাই") || lower.contains("dao") || lower.contains("দাও") ||
-                lower.contains("dekhao") || lower.contains("দেখাও") || lower.contains("of ") || lower.startsWith("photo") ||
-                lower.startsWith("image") || lower.startsWith("picture") || lower.startsWith("pic") ||
-                lower.startsWith("wallpaper") || lower.startsWith("chobi") || lower.startsWith("ছবি") ||
-                lower.startsWith("ফটো") || lower.startsWith("পিক") || lower.contains("ai pic") ||
-                lower.contains("ai photo") || lower.contains("ai image")
-
-        return hasCreationSignal
-    }
+    private fun isImageGenerationIntent(text: String): Boolean = Companion.isImageGenerationIntent(text)
 
     private fun extractSubject(prompt: String, type: String): String {
         var clean = prompt
@@ -1039,21 +1098,7 @@ class UnifiedAiEngine(private val context: Context? = null) {
     }
 
     // --- 3. Song & Music Generation Intent ---
-    private fun isSongGenerationIntent(text: String): Boolean {
-        if (isEducationalQuestion(text)) return false
-        val lower = text.lowercase().trim()
-        val hasMusicTerm = lower.contains("gaan") || lower.contains("গান") ||
-                lower.contains("song") || lower.contains("music") || lower.contains("মিউজিক") ||
-                lower.contains("tune") || lower.contains("সুর") || lower.contains("beat") || lower.contains("বিট")
-        if (!hasMusicTerm) return false
-
-        return lower.contains("banao") || lower.contains("বানাও") || lower.contains("banano") ||
-                lower.contains("বানানো") || lower.contains("render") || lower.contains("রেন্ডার") ||
-                lower.contains("compose") || lower.contains("লিখ") || lower.contains("লেখ") ||
-                lower.contains("make") || lower.contains("create") || lower.contains("generate") ||
-                lower.contains("play") || lower.contains("বাজাও") || lower.startsWith("song ") ||
-                lower.startsWith("music ") || lower.startsWith("গান ") || lower.startsWith("মিউজিক ")
-    }
+    private fun isSongGenerationIntent(text: String): Boolean = Companion.isSongGenerationIntent(text)
 
     private fun generateSongCraft(prompt: String): AiResponse {
         val isBengali = prompt.any { it in '\u0980'..'\u09FF' }
@@ -1098,25 +1143,7 @@ class UnifiedAiEngine(private val context: Context? = null) {
     }
 
     // --- 4. 3D Model Intent ---
-    private fun is3dModelIntent(text: String): Boolean {
-        if (isEducationalQuestion(text)) return false
-        val lower = text.lowercase().trim()
-
-        if (lower.startsWith("3d:") || lower.startsWith("cad:")) return true
-
-        val has3dTerm = lower.contains("3d") || lower.contains("three d") || lower.contains("cad") ||
-                lower.contains("ত্রিমাত্রিক") || lower.contains("hologram") || lower.contains("হোলোগ্রাম")
-        if (!has3dTerm) return false
-
-        return lower.contains("model") || lower.contains("মডেল") || lower.contains("banao") ||
-                lower.contains("বানাও") || lower.contains("make") || lower.contains("create") ||
-                lower.contains("generate") || lower.contains("toiri") || lower.contains("তৈরি") ||
-                lower.contains("object") || lower.contains("mesh") || lower.contains("shape") ||
-                lower.contains("car") || lower.contains("গাড়ি") || lower.contains("robot") ||
-                lower.contains("রোবট") || lower.contains("ship") || lower.contains("মহাকাশ") ||
-                lower.contains("diamond") || lower.contains("sphere") || lower.contains("cube") ||
-                lower.startsWith("3d") || lower.contains("3d তে") || lower.contains("3d te")
-    }
+    private fun is3dModelIntent(text: String): Boolean = Companion.is3dModelIntent(text)
 
     private fun generate3dModelCraft(prompt: String): AiResponse {
         val isBengali = prompt.any { it in '\u0980'..'\u09FF' }
@@ -1166,7 +1193,7 @@ class UnifiedAiEngine(private val context: Context? = null) {
 
     // --- Gemini Multimodal Intelligence ---
     private fun queryGeminiFlash(prompt: String, imageBase64: String?): String {
-        val models = listOf("gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-2.0-flash-lite")
+        val models = listOf("gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro")
         for (m in models) {
             try {
                 // First try direct clean inference for ultra-fast response
@@ -1183,7 +1210,7 @@ class UnifiedAiEngine(private val context: Context? = null) {
     }
 
     private fun queryGeminiPro(prompt: String, imageBase64: String?): String {
-        val models = listOf("gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash")
+        val models = listOf("gemini-1.5-pro", "gemini-2.0-flash", "gemini-1.5-flash")
         for (m in models) {
             try {
                 val ans = queryGeminiModel(m, prompt, imageBase64, withSearchGrounding = false)

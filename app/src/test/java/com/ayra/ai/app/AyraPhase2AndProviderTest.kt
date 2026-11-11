@@ -134,4 +134,23 @@ class AyraPhase2AndProviderTest {
         val emptySanitized = StorageHelper.sanitizeFileName("   ")
         assertTrue("Empty file name must fall back to valid attachment name", emptySanitized.startsWith("attachment_"))
     }
+
+    @Test
+    fun testGeminiModelResolutionFixes520RootCause() {
+        assertEquals("gemini-2.0-flash", com.ayra.ai.app.ai.providers.ExternalAiProviders.resolveGeminiModel("gemini-2.5-flash"))
+        assertEquals("gemini-1.5-pro", com.ayra.ai.app.ai.providers.ExternalAiProviders.resolveGeminiModel("gemini-2.5-pro"))
+        assertEquals("gemini-1.5-flash", com.ayra.ai.app.ai.providers.ExternalAiProviders.resolveGeminiModel("gemini-1.5-flash"))
+        assertEquals("gemini-2.0-flash-lite", com.ayra.ai.app.ai.providers.ExternalAiProviders.resolveGeminiModel("gemini-2.0-flash-lite"))
+    }
+
+    @Test
+    fun testAyraErrorMappingPreservesRealStatusCodes() {
+        val serverErr503 = com.ayra.ai.app.ai.providers.ProviderError.ServerError(503, "Service Unavailable")
+        val downError = com.ayra.ai.app.ai.providers.AyraError.ProviderDown(AiProviderType.GEMINI, 503)
+        assertTrue("Error message must report actual HTTP 503", downError.userFriendlyMessage.contains("503"))
+        assertFalse("Error message must never fabricate HTTP 520", downError.userFriendlyMessage.contains("520"))
+
+        val downError404 = com.ayra.ai.app.ai.providers.AyraError.ProviderDown(AiProviderType.GEMINI, 404)
+        assertTrue("Error message must report actual HTTP 404", downError404.userFriendlyMessage.contains("404"))
+    }
 }

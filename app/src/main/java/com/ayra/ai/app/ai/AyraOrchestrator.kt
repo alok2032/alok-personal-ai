@@ -64,65 +64,110 @@ class AyraOrchestrator(private val context: Context) {
             return@flow
         }
 
-        // 3. Tool Intent Classification (Strict)
+        // 2b. Deterministic Math & Scientific Expression Evaluation
+        val mathResult = AutonomousKnowledgeEngine.tryCalculateMath(trimmed)
+        if (mathResult != null) {
+            emit(AyraEvent.Complete(AiResponse(text = mathResult, modelUsed = "Deterministic Math Engine 🔢")))
+            return@flow
+        }
+
+        // 3. Tool & Craft Intent Classification
         val toolIntent = AyraIntentClassifier.classifyIntent(trimmed)
 
+        if (toolIntent == AyraToolIntent.PDF || UnifiedAiEngine.isPdfStudioIntent(trimmed, documentText, imageBase64)) {
+            emit(AyraEvent.Status("Generating PDF Document..."))
+            val pdfResp = unifiedAiEngine.generateUnifiedResponse(
+                prompt = trimmed,
+                personaMode = persona,
+                modelTier = tier,
+                attachedDocumentText = documentText,
+                attachedDocumentName = documentName,
+                attachedImageBase64 = imageBase64
+            )
+            emit(AyraEvent.Complete(pdfResp))
+            return@flow
+        }
+
+        if (toolIntent == AyraToolIntent.TERMINAL || UnifiedAiEngine.isCyberTerminalIntent(trimmed)) {
+            val cmd = trimmed.removePrefix("/terminal").removePrefix("terminal:").trim()
+            val isBengali = trimmed.any { it in '\u0980'..'\u09FF' }
+            val reply = if (isBengali) {
+                "🛡️ **Ayra Cyber Security Educational Terminal & Defensive Lab** সক্রিয় হয়েছে। অনুমোদিত ডায়াগনস্টিক চালান:"
+            } else {
+                "🛡️ **Ayra Cyber Security Educational Terminal & Defensive Lab** active. Executing diagnostics:"
+            }
+            emit(AyraEvent.Complete(
+                AiResponse(
+                    text = reply,
+                    craftType = "CYBER_TERMINAL",
+                    craftPayload = cmd,
+                    modelUsed = "Ayra Terminal Engine"
+                )
+            ))
+            return@flow
+        }
+
+        if (toolIntent == AyraToolIntent.IMAGE || UnifiedAiEngine.isImageGenerationIntent(trimmed)) {
+            emit(AyraEvent.Status("Synthesizing image prompt..."))
+            val imgResp = unifiedAiEngine.generateUnifiedResponse(
+                prompt = trimmed,
+                personaMode = persona,
+                modelTier = tier,
+                attachedImageBase64 = imageBase64
+            )
+            emit(AyraEvent.Complete(imgResp))
+            return@flow
+        }
+
+        if (UnifiedAiEngine.isVideoGenerationIntent(trimmed)) {
+            emit(AyraEvent.Status("Synthesizing video craft & camera motion..."))
+            val videoResp = unifiedAiEngine.generateUnifiedResponse(
+                prompt = trimmed,
+                personaMode = persona,
+                modelTier = tier
+            )
+            emit(AyraEvent.Complete(videoResp))
+            return@flow
+        }
+
+        if (UnifiedAiEngine.isSongGenerationIntent(trimmed)) {
+            emit(AyraEvent.Status("Composing melodic song craft & lyrics..."))
+            val songResp = unifiedAiEngine.generateUnifiedResponse(
+                prompt = trimmed,
+                personaMode = persona,
+                modelTier = tier
+            )
+            emit(AyraEvent.Complete(songResp))
+            return@flow
+        }
+
+        if (UnifiedAiEngine.is3dModelIntent(trimmed)) {
+            emit(AyraEvent.Status("Synthesizing 3D CAD holographic model..."))
+            val modelResp = unifiedAiEngine.generateUnifiedResponse(
+                prompt = trimmed,
+                personaMode = persona,
+                modelTier = tier
+            )
+            emit(AyraEvent.Complete(modelResp))
+            return@flow
+        }
+
+        if (toolIntent == AyraToolIntent.DEEP_RESEARCH || UnifiedAiEngine.isDeepResearchIntent(trimmed)) {
+            emit(AyraEvent.Status("Conducting grounded multi-source research..."))
+            val researchResp = unifiedAiEngine.generateUnifiedResponse(
+                prompt = trimmed,
+                personaMode = persona,
+                modelTier = tier,
+                attachedDocumentText = documentText,
+                attachedImageBase64 = imageBase64
+            )
+            emit(AyraEvent.Complete(researchResp))
+            return@flow
+        }
+
+        // 4. Main CHAT & Coding execution through ProviderPool
         when (toolIntent) {
-            AyraToolIntent.PDF -> {
-                emit(AyraEvent.Status("Generating PDF Document..."))
-                val pdfResp = unifiedAiEngine.generateUnifiedResponse(
-                    prompt = trimmed,
-                    personaMode = persona,
-                    modelTier = tier,
-                    attachedDocumentText = documentText,
-                    attachedDocumentName = documentName,
-                    attachedImageBase64 = imageBase64
-                )
-                emit(AyraEvent.Complete(pdfResp))
-                return@flow
-            }
-            AyraToolIntent.TERMINAL -> {
-                val cmd = trimmed.removePrefix("/terminal").removePrefix("terminal:").trim()
-                val isBengali = trimmed.any { it in '\u0980'..'\u09FF' }
-                val reply = if (isBengali) {
-                    "🛡️ **Ayra Cyber Security Educational Terminal & Defensive Lab** সক্রিয় হয়েছে। অনুমোদিত ডায়াগনস্টিক চালান:"
-                } else {
-                    "🛡️ **Ayra Cyber Security Educational Terminal & Defensive Lab** active. Executing diagnostics:"
-                }
-                emit(AyraEvent.Complete(
-                    AiResponse(
-                        text = reply,
-                        craftType = "CYBER_TERMINAL",
-                        craftPayload = cmd,
-                        modelUsed = "Ayra Terminal Engine"
-                    )
-                ))
-                return@flow
-            }
-            AyraToolIntent.IMAGE -> {
-                emit(AyraEvent.Status("Synthesizing image prompt..."))
-                val imgResp = unifiedAiEngine.generateUnifiedResponse(
-                    prompt = trimmed,
-                    personaMode = persona,
-                    modelTier = tier,
-                    attachedImageBase64 = imageBase64
-                )
-                emit(AyraEvent.Complete(imgResp))
-                return@flow
-            }
-            AyraToolIntent.DEEP_RESEARCH -> {
-                emit(AyraEvent.Status("Conducting grounded multi-source research..."))
-                val researchResp = unifiedAiEngine.generateUnifiedResponse(
-                    prompt = trimmed,
-                    personaMode = persona,
-                    modelTier = tier,
-                    attachedDocumentText = documentText,
-                    attachedImageBase64 = imageBase64
-                )
-                emit(AyraEvent.Complete(researchResp))
-                return@flow
-            }
-            AyraToolIntent.CHAT -> {
+            AyraToolIntent.CHAT, AyraToolIntent.IMAGE, AyraToolIntent.PDF, AyraToolIntent.TERMINAL, AyraToolIntent.DEEP_RESEARCH -> {
                 // Main CHAT & Coding execution through ProviderPool
                 val poolMode = when (tier) {
                     "omniroute", "quality" -> ProviderPoolMode.BEST
