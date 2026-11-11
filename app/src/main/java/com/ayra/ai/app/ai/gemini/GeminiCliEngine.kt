@@ -59,22 +59,19 @@ class GeminiCliEngine(private val context: Context? = null) {
 
         val start = System.currentTimeMillis()
         try {
-            val actualModel = when (model) {
-                "gemini-2.5-flash" -> "gemini-2.0-flash"
-                "gemini-2.5-pro" -> "gemini-1.5-pro"
-                else -> model
-            }
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:generateContent?key=$apiKey"
+            val actualModel = com.ayra.ai.app.ai.providers.ExternalAiProviders.resolveGeminiModel(model)
+            val encodedKey = java.net.URLEncoder.encode(apiKey, "UTF-8")
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:generateContent?key=$encodedKey"
 
             val partsArray = JSONArray()
             partsArray.put(JSONObject().apply { put("text", prompt) })
 
             if (!imageBase64.isNullOrBlank()) {
                 val inlineData = JSONObject().apply {
-                    put("mime_type", "image/jpeg")
+                    put("mimeType", "image/jpeg")
                     put("data", imageBase64)
                 }
-                partsArray.put(JSONObject().apply { put("inline_data", inlineData) })
+                partsArray.put(JSONObject().apply { put("inlineData", inlineData) })
             }
 
             val payload = JSONObject().apply {
@@ -84,7 +81,7 @@ class GeminiCliEngine(private val context: Context? = null) {
                         put("parts", partsArray)
                     })
                 })
-                put("system_instruction", JSONObject().apply {
+                put("systemInstruction", JSONObject().apply {
                     put("parts", JSONArray().apply {
                         put(JSONObject().apply { put("text", systemDirective) })
                     })
@@ -99,6 +96,7 @@ class GeminiCliEngine(private val context: Context? = null) {
             val request = Request.Builder()
                 .url(url)
                 .post(payload.toString().toRequestBody("application/json".toMediaType()))
+                .addHeader("x-goog-api-key", apiKey)
                 .build()
 
             httpClient.newCall(request).execute().use { resp ->
@@ -116,15 +114,20 @@ class GeminiCliEngine(private val context: Context? = null) {
 
                         GeminiCliResult(
                             text = text,
-                            modelUsed = model,
+                            modelUsed = actualModel,
                             latencyMs = System.currentTimeMillis() - start,
                             promptTokens = promptTokens,
                             candidateTokens = candidateTokens
                         )
                     } else null
-                } else null
+                } else {
+                    val err = resp.body?.string() ?: resp.message
+                    android.util.Log.w("GeminiCliEngine", "CLI inference failed with code ${resp.code}: $err")
+                    null
+                }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.e("GeminiCliEngine", "CLI execution exception", e)
             null
         }
     }

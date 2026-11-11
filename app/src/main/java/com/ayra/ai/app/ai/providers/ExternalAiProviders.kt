@@ -101,10 +101,14 @@ class ExternalAiProviders(private val context: Context? = null) {
 
     companion object {
         fun resolveGeminiModel(model: String): String {
-            return when (model) {
-                "gemini-2.5-flash" -> "gemini-2.0-flash"
-                "gemini-2.5-pro" -> "gemini-1.5-pro"
-                else -> model
+            val clean = model.trim().lowercase().removePrefix("models/")
+            return when {
+                clean in listOf("gemini-2.5-flash", "gemini_flash", "gemini-flash", "gemini-2.0-flash", "gemini-flash-2.0") -> "gemini-2.0-flash"
+                clean in listOf("gemini-2.5-pro", "gemini_pro", "gemini-pro", "gemini-1.5-pro", "gemini-pro-1.5") -> "gemini-1.5-pro"
+                clean in listOf("gemini-2.0-flash-lite", "gemini_flash_lite", "gemini-flash-lite") -> "gemini-2.0-flash-lite"
+                clean in listOf("gemini-1.5-flash", "gemini_1_5_flash") -> "gemini-1.5-flash"
+                clean.isNotBlank() -> clean
+                else -> "gemini-2.0-flash"
             }
         }
 
@@ -371,11 +375,16 @@ class ExternalAiProviders(private val context: Context? = null) {
 
     private fun callGemini(turns: List<ChatTurn>, model: String, apiKey: String, withSearchGrounding: Boolean): String {
         val actualModel = resolveGeminiModel(model)
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:generateContent"
+        val encodedKey = if (apiKey.isNotBlank()) URLEncoder.encode(apiKey, "UTF-8") else ""
+        val url = if (encodedKey.isNotBlank()) {
+            "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:generateContent?key=$encodedKey"
+        } else {
+            "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:generateContent"
+        }
         val requestJson = JSONObject().apply {
             val systemTurn = turns.firstOrNull { it.role == "system" }
             if (systemTurn != null && systemTurn.content.isNotBlank()) {
-                put("system_instruction", JSONObject().apply {
+                put("systemInstruction", JSONObject().apply {
                     put("parts", JSONArray().put(JSONObject().put("text", systemTurn.content)))
                 })
             }
@@ -390,8 +399,8 @@ class ExternalAiProviders(private val context: Context? = null) {
 
                 if (!turn.imageBase64.isNullOrBlank()) {
                     partsArray.put(JSONObject().apply {
-                        put("inline_data", JSONObject().apply {
-                            put("mime_type", "image/jpeg")
+                        put("inlineData", JSONObject().apply {
+                            put("mimeType", "image/jpeg")
                             put("data", turn.imageBase64)
                         })
                     })
@@ -458,19 +467,34 @@ class ExternalAiProviders(private val context: Context? = null) {
 
     private suspend fun streamGemini(turns: List<ChatTurn>, model: String, apiKey: String, collector: kotlinx.coroutines.flow.FlowCollector<String>) {
         val actualModel = resolveGeminiModel(model)
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:streamGenerateContent?alt=sse"
+        val encodedKey = if (apiKey.isNotBlank()) URLEncoder.encode(apiKey, "UTF-8") else ""
+        val url = if (encodedKey.isNotBlank()) {
+            "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:streamGenerateContent?alt=sse&key=$encodedKey"
+        } else {
+            "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:streamGenerateContent?alt=sse"
+        }
         val requestJson = JSONObject().apply {
             val systemTurn = turns.firstOrNull { it.role == "system" }
-            if (systemTurn != null) {
-                put("system_instruction", JSONObject().apply {
+            if (systemTurn != null && systemTurn.content.isNotBlank()) {
+                put("systemInstruction", JSONObject().apply {
                     put("parts", JSONArray().put(JSONObject().put("text", systemTurn.content)))
                 })
             }
             val contentsArray = JSONArray()
             for (turn in turns.filter { it.role != "system" }) {
+                val partsArray = JSONArray()
+                partsArray.put(JSONObject().put("text", turn.content))
+                if (!turn.imageBase64.isNullOrBlank()) {
+                    partsArray.put(JSONObject().apply {
+                        put("inlineData", JSONObject().apply {
+                            put("mimeType", "image/jpeg")
+                            put("data", turn.imageBase64)
+                        })
+                    })
+                }
                 contentsArray.put(JSONObject().apply {
                     put("role", if (turn.role == "assistant") "model" else "user")
-                    put("parts", JSONArray().put(JSONObject().put("text", turn.content)))
+                    put("parts", partsArray)
                 })
             }
             put("contents", contentsArray)
@@ -645,6 +669,12 @@ class ExternalAiProviders(private val context: Context? = null) {
         }
 
         httpClient.newCall(reqBuilder.build()).execute().use { response ->
+            if (response.code == 429) throw ProviderError.RateLimited("${provider.displayName} rate limit reached.")
+            if (response.code == 401 || response.code == 403) throw ProviderError.Unauthorized(provider)
+            if (!response.isSuccessful) {
+                val err = response.body?.string() ?: response.message
+                throw ProviderError.ServerError(response.code, err.ifBlank { response.message })
+            }
             val reader = BufferedReader(InputStreamReader(response.body?.byteStream() ?: return, StandardCharsets.UTF_8))
             var line: String?
             while (reader.readLine().also { line = it } != null) {
@@ -762,6 +792,12 @@ class ExternalAiProviders(private val context: Context? = null) {
             .build()
 
         httpClient.newCall(request).execute().use { response ->
+            if (response.code == 429) throw ProviderError.RateLimited("Anthropic Claude rate limit reached.")
+            if (response.code == 401 || response.code == 403) throw ProviderError.Unauthorized(AiProviderType.ANTHROPIC)
+            if (!response.isSuccessful) {
+                val err = response.body?.string() ?: response.message
+                throw ProviderError.ServerError(response.code, err.ifBlank { response.message })
+            }
             val reader = BufferedReader(InputStreamReader(response.body?.byteStream() ?: return, StandardCharsets.UTF_8))
             var line: String?
             while (reader.readLine().also { line = it } != null) {

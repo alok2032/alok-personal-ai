@@ -764,4 +764,7 @@ private fun saveKey(context: Context, provider: AiProviderType, key: String) {
         AiProviderType.LOCAL_OLLAMA -> AyraPreferences.setCustomEndpointUrl(context, key)
         AiProviderType.OMNI_ROUTE -> {}
     }
+    try {
+        ExternalAiProviders(context).circuitBreaker.resetProvider(provider)
+    } catch (_: Exception) {}
 }

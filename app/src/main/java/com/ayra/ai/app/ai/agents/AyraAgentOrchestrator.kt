@@ -81,6 +81,28 @@ object AyraAgentOrchestrator {
     }
 
     /**
+     * Detects if the prompt is written in Banglish (Bengali words typed using Latin characters).
+     */
+    fun isBanglish(text: String): Boolean {
+        val lower = text.lowercase(Locale.ROOT).trim()
+        if (lower.isEmpty()) return false
+        // If it contains native Bengali characters, it is native Bengali script
+        if (lower.any { it in '\u0980'..'\u09FF' }) return false
+
+        val banglishKeywords = listOf(
+            "kemon", "acho", "achis", "achhen", "tumi", "apni", "tui",
+            "ki khobor", "valo", "bhalo", "koro", "korcho", "korchho", "korchen",
+            "jante chai", "bolo", "bolun", "ekta", "kivabe", "kibhabe",
+            "keno", "kothay", "kobe", "amake", "amader", "tomake", "tomader",
+            "bujhte", "parlam", "parbo", "hobe", "hobe na", "khub",
+            "dekhao", "shono", "shunchen", "khawa", "khabar", "din",
+            "sobai", "kichu", "onek", "chai", "dorkar", "likhe dao",
+            "toiri", "banao", "korbe", "korle", "korbo"
+        )
+        return banglishKeywords.any { lower.contains(it) }
+    }
+
+    /**
      * Builds a tailored system prompt for the dispatched agent domain.
      * Incorporates personality, user instructions, and strict anti-hallucination rules.
      */
@@ -89,12 +111,13 @@ object AyraAgentOrchestrator {
         isBengali: Boolean,
         isGfMode: Boolean,
         userCustomInstructions: String = "",
-        rememberedFacts: Set<String> = emptySet()
+        rememberedFacts: Set<String> = emptySet(),
+        isBanglish: Boolean = false
     ): String {
-        val langInstruction = if (isBengali) {
-            "Respond natively in natural, grammatically flawless Bengali (বাংলা)."
-        } else {
-            "Respond in clear, natural, grammatically correct English."
+        val langInstruction = when {
+            isBengali -> "Respond natively in natural, grammatically flawless Bengali (বাংলা)."
+            isBanglish -> "The user is communicating in Banglish (Bengali written in Latin letters). Understand their intent completely and respond in warm, natural Bengali (বাংলা) or fluent natural Banglish as appropriate."
+            else -> "Respond in clear, natural, grammatically correct English."
         }
 
         val personaPrefix = if (isGfMode) {

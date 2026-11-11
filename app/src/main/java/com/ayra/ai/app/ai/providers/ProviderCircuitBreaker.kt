@@ -82,6 +82,14 @@ class ProviderCircuitBreaker(
         }
     }
 
+    /**
+     * Resets the circuit state and failure history for a specific provider.
+     * Invoked when the user updates or configures an API key.
+     */
+    fun resetProvider(provider: AiProviderType) {
+        providerStates.remove(provider)
+    }
+
     fun getCachedResponse(cacheKey: String): String? = responseCache[cacheKey]
 
     fun putCachedResponse(cacheKey: String, response: String) {

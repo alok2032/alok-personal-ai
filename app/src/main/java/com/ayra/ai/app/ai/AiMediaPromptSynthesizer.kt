@@ -56,9 +56,9 @@ object AiMediaPromptSynthesizer {
     /**
      * Translates and refines any user prompt into a high-fidelity DALL-E / Flux English prompt.
      */
-    fun synthesizeVisualPrompt(rawPrompt: String, type: String = "IMAGE"): Pair<String, String> {
+    fun synthesizeVisualPrompt(rawPrompt: String, type: String = "IMAGE", context: android.content.Context? = null): Pair<String, String> {
         val cleanSubject = extractCleanSubject(rawPrompt)
-        val geminiKey = BuildConfig.GEMINI_API_KEY
+        val geminiKey = context?.let { com.ayra.ai.app.data.AyraPreferences.getEffectiveGeminiKey(it) }?.ifBlank { BuildConfig.GEMINI_API_KEY } ?: BuildConfig.GEMINI_API_KEY
 
         // 1. Try Gemini API prompt expansion if key available
         if (geminiKey.isNotBlank()) {
@@ -132,9 +132,15 @@ object AiMediaPromptSynthesizer {
                 "You are an expert prompt engineer for DALL-E 3 and Midjourney v6. Convert this visual request into a single sentence master photographic English prompt with subject details, lens, lighting, and textures. Output ONLY the English prompt in one line, no markdown, no quotes."
             }
 
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+            val encodedKey = if (apiKey.isNotBlank()) URLEncoder.encode(apiKey, "UTF-8") else ""
+            val url = if (encodedKey.isNotBlank()) {
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$encodedKey"
+            } else {
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+            }
             val requestJson = JSONObject().apply {
                 put("contents", JSONArray().put(JSONObject().apply {
+                    put("role", "user")
                     put("parts", JSONArray().put(JSONObject().apply {
                         put("text", "$systemInstruction\nUser request: $subject")
                     }))

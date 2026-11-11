@@ -734,8 +734,22 @@ fun ChatScreen(
                 onTextChange = { inputText = it },
                 isListening = isListening,
                 isGenerating = isGenerating,
+                hasAttachment = selectedImageUri != null || selectedDocumentName != null,
                 onSend = { dispatchPrompt(inputText) },
-                onStop = { viewModel.stopGeneration() },
+                onStop = {
+                    val currentStream = viewModel.streamingAnswer.value
+                    if (!currentStream.isNullOrBlank()) {
+                        scope.launch {
+                            chatDao.insertMessage(
+                                ChatMessage(
+                                    role = "assistant",
+                                    content = currentStream + "\n\n*(Generation stopped by user)*"
+                                )
+                            )
+                        }
+                    }
+                    viewModel.stopGeneration()
+                },
                 onMicClick = {
                     val hasRecord = ContextCompat.checkSelfPermission(
                         context,
@@ -1065,7 +1079,9 @@ fun ChatScreen(
                                 .border(1.dp, NeonRose.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
-                                    inputText = "Generate a cinematic 4K video of a spaceship entering a colorful nebula with FPV drone motion"
+                                    val p = "Generate a cinematic 4K video of a spaceship entering a colorful nebula with FPV drone motion"
+                                    inputText = p
+                                    dispatchPromptRef?.invoke(p)
                                 }
                                 .padding(12.dp)
                         ) {
@@ -1089,7 +1105,9 @@ fun ChatScreen(
                                     showAttachmentPicker = false
                                     selectedModelTier = "ecc"
                                     aiEngine.selectedModelTier = "ecc"
-                                    inputText = "ECC Cognitive: কনটেক্সট মেমরি ও ইন্টেন্ট ডিসঅ্যাম্বিগিউয়েশন গ্রাউন্ড করো"
+                                    val p = "ECC Cognitive: কনটেক্সট মেমরি ও ইন্টেন্ট ডিসঅ্যাম্বিগিউয়েশন গ্রাউন্ড করো"
+                                    inputText = p
+                                    dispatchPromptRef?.invoke(p)
                                 }
                                 .padding(12.dp)
                         ) {
@@ -1111,7 +1129,9 @@ fun ChatScreen(
                                 .border(1.dp, NeonGreen.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
-                                    inputText = "Superpower: TDD এবং সিস্টেমেটিক ডিবাগিং দিয়ে কোড টেস্ট ও আর্কিটেকচার তৈরি করো"
+                                    val p = "Superpower: TDD এবং সিস্টেমেটিক ডিবাগিং দিয়ে কোড টেস্ট ও আর্কিটেকচার তৈরি করো"
+                                    inputText = p
+                                    dispatchPromptRef?.invoke(p)
                                 }
                                 .padding(12.dp)
                         ) {
@@ -1164,7 +1184,9 @@ fun ChatScreen(
                                 .border(0.8.dp, NeonGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
-                                    inputText = "Create a professional PDF document about Artificial Intelligence"
+                                    val p = "Create a professional PDF document about Artificial Intelligence"
+                                    inputText = p
+                                    dispatchPromptRef?.invoke(p)
                                 }
                                 .padding(12.dp)
                         ) {
@@ -1186,7 +1208,9 @@ fun ChatScreen(
                                 .border(0.8.dp, NeonPurple.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
-                                    inputText = "একটি সুন্দর রঙিন ড্রাগনের 8K ছবি আঁকো"
+                                    val p = "একটি সুন্দর রঙিন ড্রাগনের 8K ছবি আঁকো"
+                                    inputText = p
+                                    dispatchPromptRef?.invoke(p)
                                 }
                                 .padding(12.dp)
                         ) {
@@ -1208,7 +1232,9 @@ fun ChatScreen(
                                 .border(0.8.dp, NeonCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
-                                    inputText = "একটি রোমান্টিক মিষ্টি প্রেমের গান বানাও"
+                                    val p = "একটি রোমান্টিক মিষ্টি প্রেমের গান বানাও"
+                                    inputText = p
+                                    dispatchPromptRef?.invoke(p)
                                 }
                                 .padding(12.dp)
                         ) {
@@ -1230,7 +1256,9 @@ fun ChatScreen(
                                 .border(0.8.dp, NeonGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .clickable {
                                     showAttachmentPicker = false
-                                    inputText = "Build your own Redis server from scratch with complete architecture and code"
+                                    val p = "Build your own Redis server from scratch with complete architecture and code"
+                                    inputText = p
+                                    dispatchPromptRef?.invoke(p)
                                 }
                                 .padding(12.dp)
                         ) {
@@ -1388,6 +1416,111 @@ fun ChatScreen(
                     }
                 },
                 containerColor = Color(0xFF1E293B)
+            )
+        }
+
+        if (showKeyOnboarding) {
+            var inputKey by remember { mutableStateOf("") }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { viewModel.setShowKeyOnboarding(false) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Key,
+                        contentDescription = null,
+                        tint = NeonCyan,
+                        modifier = Modifier.size(32.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = "Connect AI Provider ⚡",
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "To get sub-second, intelligent answers in Bengali and English without quota errors, connect your Google Gemini API Key. It's completely free from Google AI Studio.",
+                            color = TextSecondary,
+                            fontSize = 13.sp
+                        )
+                        OutlinedTextField(
+                            value = inputKey,
+                            onValueChange = { inputKey = it },
+                            placeholder = { Text("Paste AIzaSy... key here", color = TextSecondary, fontSize = 12.sp) },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("onboarding_key_input"),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = NeonCyan,
+                                unfocusedBorderColor = NeonCyan.copy(alpha = 0.3f),
+                                cursorColor = NeonCyan
+                            )
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    try {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/app/apikey"))
+                                        context.startActivity(intent)
+                                    } catch (_: Exception) {
+                                        Toast.makeText(context, "Visit: https://aistudio.google.com/app/apikey", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            ) {
+                                Text("Get Free Key ↗", color = NeonCyan, fontSize = 12.sp)
+                            }
+                            TextButton(
+                                onClick = {
+                                    showControlCenterSheet = true
+                                    viewModel.setShowKeyOnboarding(false)
+                                }
+                            ) {
+                                Text("All Providers ⚙️", color = NeonPurple, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (inputKey.isNotBlank()) {
+                                AyraPreferences.setCustomGeminiKey(context, inputKey.trim())
+                                try {
+                                    com.ayra.ai.app.ai.providers.ExternalAiProviders(context).circuitBreaker.resetProvider(
+                                        com.ayra.ai.app.ai.providers.AiProviderType.GEMINI
+                                    )
+                                } catch (_: Exception) {}
+                                Toast.makeText(context, "Google Gemini connected successfully! ⚡", Toast.LENGTH_SHORT).show()
+                            }
+                            viewModel.setShowKeyOnboarding(false)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = NeonCyan),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.testTag("onboarding_save_button")
+                    ) {
+                        Text(if (inputKey.isNotBlank()) "Connect & Start" else "Use Free Mode", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = { viewModel.setShowKeyOnboarding(false) }
+                    ) {
+                        Text("Dismiss", color = TextSecondary)
+                    }
+                },
+                containerColor = Color(0xFF1E293B),
+                shape = RoundedCornerShape(20.dp)
             )
         }
     }
@@ -1833,11 +1966,13 @@ private fun GlassInputRow(
     onTextChange: (String) -> Unit,
     isListening: Boolean,
     isGenerating: Boolean,
+    hasAttachment: Boolean = false,
     onSend: () -> Unit,
     onStop: () -> Unit,
     onMicClick: () -> Unit,
     onAttachClick: () -> Unit
 ) {
+    val canSend = text.isNotBlank() || hasAttachment
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1895,35 +2030,40 @@ private fun GlassInputRow(
             maxLines = 4
         )
 
-        // Mic Button with sweet glowing state
+        // Mic Button with sweet glowing state (48dp target)
         Box(
             modifier = Modifier
-                .size(46.dp)
+                .size(48.dp)
                 .clip(CircleShape)
                 .background(if (isListening) NeonRose else GlassSurfaceDark)
                 .border(1.2.dp, if (isListening) NeonRose else NeonCyan, CircleShape)
-                .clickable { onMicClick() },
+                .clickable { onMicClick() }
+                .testTag("chat_mic_button"),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = if (isListening) Icons.Default.MicOff else Icons.Default.Mic,
-                contentDescription = "Voice",
-                tint = if (isListening) Color.Black else NeonCyan
+                contentDescription = "Voice Input",
+                tint = if (isListening) Color.Black else NeonCyan,
+                modifier = Modifier.size(22.dp)
             )
         }
 
-        // Send / Stop Button
+        // Send / Stop Button (48dp touch target)
         Box(
             modifier = Modifier
-                .size(46.dp)
+                .size(48.dp)
                 .clip(CircleShape)
                 .background(
-                    if (isGenerating) Brush.linearGradient(listOf(Color(0xFFFF1744), Color(0xFFD50000)))
-                    else Brush.linearGradient(listOf(NeonCyan, NeonPurple))
+                    when {
+                        isGenerating -> Brush.linearGradient(listOf(Color(0xFFFF1744), Color(0xFFD50000)))
+                        canSend -> Brush.linearGradient(listOf(NeonCyan, NeonPurple))
+                        else -> Brush.linearGradient(listOf(Color(0xFF2A2D3A), Color(0xFF1E212B)))
+                    }
                 )
                 .clickable {
                     if (isGenerating) onStop()
-                    else if (text.isNotBlank()) onSend()
+                    else if (canSend) onSend()
                 }
                 .testTag("chat_send_button"),
             contentAlignment = Alignment.Center
@@ -1939,7 +2079,7 @@ private fun GlassInputRow(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Send",
-                    tint = Color.Black,
+                    tint = if (canSend) Color.Black else Color.Gray,
                     modifier = Modifier.size(20.dp)
                 )
             }

@@ -504,12 +504,14 @@ class UnifiedAiEngine(private val context: Context? = null) {
 
                 // Dispatched Multi-Agent System Prompt (Part 8)
                 val dispatchedDomain = com.ayra.ai.app.ai.agents.AyraAgentOrchestrator.classifyIntent(cleanPrompt)
+                val isBanglish = com.ayra.ai.app.ai.agents.AyraAgentOrchestrator.isBanglish(cleanPrompt)
                 val sysPrompt = com.ayra.ai.app.ai.agents.AyraAgentOrchestrator.buildSystemPrompt(
                     domain = dispatchedDomain,
                     isBengali = isBengali,
                     isGfMode = isGfMode,
                     userCustomInstructions = userInstructions,
-                    rememberedFacts = rememberedFacts
+                    rememberedFacts = rememberedFacts,
+                    isBanglish = isBanglish
                 )
 
                 val savedRoutingModeStr = context?.let { AyraPreferences.getRoutingMode(it) } ?: "auto"
@@ -519,8 +521,8 @@ class UnifiedAiEngine(private val context: Context? = null) {
                 val (routedProvider, routedModel) = externalAiProviders.getOptimalModelForRoutingMode(routingModeEnum)
 
                 val (preferredProvider, preferredModel) = when (targetTier) {
-                    AiModelTier.GEMINI_FLASH -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.GEMINI, "gemini-2.5-flash")
-                    AiModelTier.GEMINI_PRO -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.GEMINI, "gemini-2.5-pro")
+                    AiModelTier.GEMINI_FLASH -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.GEMINI, "gemini-2.0-flash")
+                    AiModelTier.GEMINI_PRO -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.GEMINI, "gemini-1.5-pro")
                     AiModelTier.OPENROUTER_DEEPSEEK -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.OPENROUTER, "deepseek/deepseek-r1")
                     AiModelTier.OPENROUTER_LLAMA -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.OPENROUTER, "meta-llama/llama-3.3-70b-instruct")
                     AiModelTier.QWEN_UNCENSORED -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.LOCAL_OLLAMA, "orcarouter/Qwen3.8-27B-Uncensored:q4_k_m")
@@ -1225,7 +1227,13 @@ class UnifiedAiEngine(private val context: Context? = null) {
     }
 
     private fun queryGeminiModel(modelName: String, prompt: String, imageBase64: String?, withSearchGrounding: Boolean = false): String {
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$modelName:generateContent"
+        val actualModel = com.ayra.ai.app.ai.providers.ExternalAiProviders.resolveGeminiModel(modelName)
+        val encodedKey = if (geminiApiKey.isNotBlank()) URLEncoder.encode(geminiApiKey, "UTF-8") else ""
+        val url = if (encodedKey.isNotBlank()) {
+            "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:generateContent?key=$encodedKey"
+        } else {
+            "https://generativelanguage.googleapis.com/v1beta/models/$actualModel:generateContent"
+        }
         val isGfMode = currentPersona == "GF_COMPANION"
 
         val systemText = if (isGfMode) {
@@ -1255,7 +1263,7 @@ class UnifiedAiEngine(private val context: Context? = null) {
         }
 
         val requestJson = JSONObject().apply {
-            put("system_instruction", JSONObject().apply {
+            put("systemInstruction", JSONObject().apply {
                 put("parts", JSONArray().put(JSONObject().put("text", systemText)))
             })
 
@@ -1264,13 +1272,17 @@ class UnifiedAiEngine(private val context: Context? = null) {
 
             if (!imageBase64.isNullOrBlank()) {
                 val inlineData = JSONObject().apply {
-                    put("mime_type", "image/jpeg")
+                    put("mimeType", "image/jpeg")
                     put("data", imageBase64)
                 }
-                partsArray.put(JSONObject().put("inline_data", inlineData))
+                partsArray.put(JSONObject().put("inlineData", inlineData))
             }
 
-            put("contents", JSONArray().put(JSONObject().put("parts", partsArray)))
+            val contentsArray = JSONArray().put(JSONObject().apply {
+                put("role", "user")
+                put("parts", partsArray)
+            })
+            put("contents", contentsArray)
 
             if (withSearchGrounding) {
                 val toolsArray = JSONArray().apply {
