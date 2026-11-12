@@ -313,12 +313,6 @@ class UnifiedAiEngine(private val context: Context? = null) {
         .build()
 
     val externalAiProviders = com.ayra.ai.app.ai.providers.ExternalAiProviders(context)
-    val omniRouteEngine = context?.let { com.ayra.ai.app.ai.omniroute.OmniRouteEngine(it) }
-    val deepSeekHarness = com.ayra.ai.app.ai.deepseek.DeepSeekHarnessEngine(context)
-    val eccEngine = com.ayra.ai.app.ai.ecc.EnterpriseCognitiveEngine(context)
-    val godModeEngine = com.ayra.ai.app.ai.godmode.GodModePliniusEngine(context)
-    val higgsfieldEngine = com.ayra.ai.app.ai.higgsfield.OpenHiggsfieldEngine(context)
-    val geminiCli = com.ayra.ai.app.ai.gemini.GeminiCliEngine(context)
 
     private val geminiApiKey: String
         get() = AyraPreferences.getEffectiveGeminiKey(context)
@@ -473,15 +467,6 @@ class UnifiedAiEngine(private val context: Context? = null) {
             return resp
         }
 
-        // 7-Alpha: OmniRoute Multi-Architecture Fast-Path
-        if (omniRouteEngine != null && (selectedModelTier == "auto" || selectedModelTier == "omniroute" ||
-                selectedModelTier == "deepseek_harness" || selectedModelTier == "godmode" ||
-                selectedModelTier == "ecc" || selectedModelTier == "higgsfield")) {
-            val omniResp = omniRouteEngine.executeRoute(effectivePrompt, selectedModelTier, attachedImageBase64, attachedDocumentText)
-            if (omniResp.text.isNotBlank()) {
-                return@withContext emitResponse(omniResp)
-            }
-        }
 
         // 7a. Try active multi-model provider chain with multi-turn conversation history
         val activeProviders = externalAiProviders.getActiveConfiguredProviders()
@@ -525,7 +510,7 @@ class UnifiedAiEngine(private val context: Context? = null) {
                     AiModelTier.GEMINI_PRO -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.GEMINI, "gemini-1.5-pro")
                     AiModelTier.OPENROUTER_DEEPSEEK -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.OPENROUTER, "deepseek/deepseek-r1")
                     AiModelTier.OPENROUTER_LLAMA -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.OPENROUTER, "meta-llama/llama-3.3-70b-instruct")
-                    AiModelTier.QWEN_UNCENSORED -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.LOCAL_OLLAMA, "orcarouter/Qwen3.8-27B-Uncensored:q4_k_m")
+                    AiModelTier.QWEN_UNCENSORED -> Pair(com.ayra.ai.app.ai.providers.AiProviderType.OPENROUTER, "qwen/qwen-2.5-72b-instruct")
                     else -> Pair(routedProvider, routedModel)
                 }
 
@@ -588,11 +573,11 @@ class UnifiedAiEngine(private val context: Context? = null) {
             }
 
             AiModelTier.QWEN_UNCENSORED -> {
-                if (context != null) {
-                    val qwenResp = com.ayra.ai.app.ai.qwen.Qwen38UncensoredEngine(context).queryQwen(effectivePrompt)
-                    if (qwenResp.text.isNotBlank()) {
-                        return@withContext emitResponse(AiResponse(text = qwenResp.text, modelUsed = qwenResp.modelUsed))
-                    }
+                if (openRouterApiKey.isNotBlank()) {
+                    try {
+                        val orRes = queryOpenRouterModel("qwen/qwen-2.5-72b-instruct", effectivePrompt)
+                        if (orRes.isNotBlank()) return@withContext emitResponse(AiResponse(text = orRes, modelUsed = "Qwen 2.5 72B (OpenRouter) 🔓"))
+                    } catch (_: Exception) {}
                 }
             }
 
@@ -1013,31 +998,38 @@ class UnifiedAiEngine(private val context: Context? = null) {
     }
 
     private suspend fun generateVideoCraft(prompt: String): AiResponse {
-        val higgsfieldPayload = higgsfieldEngine.synthesizeVideoCraft(prompt)
         val cleanSubject = extractSubject(prompt, "VIDEO")
+        val cameraMotion = "Cinematic Smooth Tracking"
+        val lensType = "35mm Anamorphic f/1.8"
+        val videoJson = JSONObject().apply {
+            put("subject", cleanSubject)
+            put("cameraMotion", cameraMotion)
+            put("lensType", lensType)
+            put("resolution", "4K 60fps")
+        }.toString()
 
         val isBengali = prompt.any { it in '\u0980'..'\u09FF' }
         val isGfMode = currentPersona == "GF_COMPANION"
 
         val replyText = if (isBengali) {
             if (isGfMode) {
-                "🎬 সোনা, Open-Higgsfield-AI সিনেমাটিক ৪K মোশন ফিজিক্স ও ভিজ্যুয়াল তৈরি করেছি:\n**$cleanSubject**\nক্যামেরা: ${higgsfieldPayload.cameraMotion} | লেন্স: ${higgsfieldPayload.lensType}\nনিচে প্রিভিউ প্লেয়ারে এটি উপভোগ করো! ❤️"
+                "🎬 সোনা, সিনেমাটিক ৪K মোশন ফিজিক্স ও ভিজ্যুয়াল তৈরি করেছি:\n**$cleanSubject**\nক্যামেরা: $cameraMotion | লেন্স: $lensType\nনিচে প্রিভিউ প্লেয়ারে এটি উপভোগ করো! ❤️"
             } else {
-                "🎬 Open-Higgsfield-AI সিনেমাটিক ৪K মোশন ফিজিক্স ভিডিও প্রস্তুত:\n**$cleanSubject**\nক্যামেরা মোশন: ${higgsfieldPayload.cameraMotion} | লেন্স: ${higgsfieldPayload.lensType}\nনিচের প্রিভিউ প্লেয়ারে পর্যবেক্ষণ করুন।"
+                "🎬 সিনেমাটিক ৪K মোশন ফিজিক্স ভিডিও প্রস্তুত:\n**$cleanSubject**\nক্যামেরা মোশন: $cameraMotion | লেন্স: $lensType\nনিচের প্রিভিউ প্লেয়ারে পর্যবেক্ষণ করুন।"
             }
         } else {
             if (isGfMode) {
-                "🎬 Sweetheart, synthesized your Open-Higgsfield 4K cinematic motion video:\n**$cleanSubject**\nCamera: ${higgsfieldPayload.cameraMotion} | Lens: ${higgsfieldPayload.lensType} ❤️"
+                "🎬 Sweetheart, synthesized your 4K cinematic motion video:\n**$cleanSubject**\nCamera: $cameraMotion | Lens: $lensType ❤️"
             } else {
-                "🎬 Open-Higgsfield-AI cinematic 4K video synthesized for:\n**$cleanSubject**\nCamera: ${higgsfieldPayload.cameraMotion} | Optics: ${higgsfieldPayload.lensType}"
+                "🎬 Cinematic 4K video synthesized for:\n**$cleanSubject**\nCamera: $cameraMotion | Optics: $lensType"
             }
         }
 
         return AiResponse(
             text = replyText,
             craftType = "VIDEO",
-            craftPayload = higgsfieldPayload.jsonPayload,
-            modelUsed = "Open-Higgsfield-AI Cinematic Motion Storyboard 🎬"
+            craftPayload = videoJson,
+            modelUsed = "Ayra Cinematic Motion Storyboard 🎬"
         )
     }
 

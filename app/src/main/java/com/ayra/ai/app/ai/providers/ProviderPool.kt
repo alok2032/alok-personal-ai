@@ -100,7 +100,6 @@ class ProviderPool(private val context: Context? = null) {
         if (provider == AiProviderType.LOCAL_OLLAMA) {
             val custom = context?.let { AyraPreferences.getCustomEndpointUrl(it) }?.trim() ?: ""
             val host = context?.let { AyraPreferences.getOllamaHost(it) }?.trim() ?: ""
-            // Ollama only available if user explicitly configured host or custom endpoint
             return custom.isNotBlank() || (host.isNotBlank() && host != "http://10.0.2.2:11434")
         }
         return key.isNotBlank()

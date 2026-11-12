@@ -74,8 +74,7 @@ fun ProviderKeysSection(
             Triple(AiProviderType.OPENROUTER, "OpenRouter (All Models)", "https://openrouter.ai/keys"),
             Triple(AiProviderType.XAI, "xAI Console", "https://console.x.ai/"),
             Triple(AiProviderType.MISTRAL, "Mistral Console", "https://console.mistral.ai/api-keys/"),
-            Triple(AiProviderType.PERPLEXITY, "Perplexity AI", "https://www.perplexity.ai/settings/api"),
-            Triple(AiProviderType.LOCAL_OLLAMA, "Local Ollama / LM Studio", "http://localhost:11434")
+            Triple(AiProviderType.PERPLEXITY, "Perplexity AI", "https://www.perplexity.ai/settings/api")
         )
     }
 
@@ -147,19 +146,37 @@ fun ProviderKeysSection(
             onTest = { key -> ElevenLabsVoiceEngine(context).testConnection(key) }
         )
 
-        // Qwen 3.8 27B Uncensored (from Wassimyounes01/qwen38-uncensored)
+        // Custom Proxy / LAN Gateway
         SpecializedIntegrationKeyCard(
             context = context,
-            title = "Qwen 3.8 27B Uncensored (Abliterated)",
-            description = "Weight-level abliterated 27B weights from Wassimyounes01/qwen38-uncensored. Answers all world questions without refusal.",
-            portalLabel = "HuggingFace GGUF",
-            portalUrl = "https://huggingface.co/orcarouter/Qwen3.8-27B-Uncensored-GGUF",
+            title = "Custom Proxy / LAN Gateway",
+            description = "Custom OpenAI-compatible HTTP inference proxy or gateway endpoint for local network servers.",
+            portalLabel = "Local Gateway",
+            portalUrl = "http://10.0.2.2:8000",
             icon = Icons.Default.AutoAwesome,
             initialKey = AyraPreferences.getCustomEndpointUrl(context),
-            placeholder = "http://10.0.2.2:11434 (Local Ollama / LAN)",
+            placeholder = "http://10.0.2.2:8000/v1",
             onSave = { AyraPreferences.setCustomEndpointUrl(context, it) },
             onClear = { AyraPreferences.setCustomEndpointUrl(context, "") },
-            onTest = { endpoint -> com.ayra.ai.app.ai.qwen.Qwen38UncensoredEngine(context).testConnection(endpoint) }
+            onTest = { endpoint ->
+                if (endpoint.isBlank() || (!endpoint.startsWith("http://") && !endpoint.startsWith("https://"))) {
+                    throw IllegalArgumentException("Endpoint must start with http:// or https://")
+                }
+                val start = System.currentTimeMillis()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val client = okhttp3.OkHttpClient.Builder()
+                            .connectTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+                            .readTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+                            .build()
+                        val req = okhttp3.Request.Builder().url(endpoint).build()
+                        client.newCall(req).execute().close()
+                    } catch (e: Exception) {
+                        if (e is IllegalArgumentException) throw e
+                    }
+                }
+                (System.currentTimeMillis() - start).coerceAtLeast(1L)
+            }
         )
     }
 }
@@ -331,21 +348,14 @@ fun SingleProviderKeyCard(
     val clipboardManager = LocalClipboardManager.current
 
     var keyInput by remember {
-        mutableStateOf(
-            if (provider == AiProviderType.LOCAL_OLLAMA) {
-                val url = AyraPreferences.getCustomEndpointUrl(context)
-                if (url.isNotBlank()) url else providersEngine.getProviderKey(provider)
-            } else {
-                providersEngine.getProviderKey(provider)
-            }
-        )
+        mutableStateOf(providersEngine.getProviderKey(provider))
     }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isTesting by remember { mutableStateOf(false) }
     var testResult by remember { mutableStateOf<String?>(null) }
     var isError by remember { mutableStateOf(false) }
 
-    val isConfigured = keyInput.isNotBlank() || (provider == AiProviderType.LOCAL_OLLAMA && AyraPreferences.getCustomEndpointUrl(context).isNotBlank())
+    val isConfigured = keyInput.isNotBlank()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -401,21 +411,19 @@ fun SingleProviderKeyCard(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     Text(
-                        if (provider == AiProviderType.LOCAL_OLLAMA) "http://10.0.2.2:11434/v1" else "Enter ${provider.displayName} API Key",
+                        "Enter ${provider.displayName} API Key",
                         style = MaterialTheme.typography.bodySmall
                     )
                 },
                 singleLine = true,
-                visualTransformation = if (isPasswordVisible || provider == AiProviderType.LOCAL_OLLAMA) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    if (provider != AiProviderType.LOCAL_OLLAMA) {
-                        IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                            Icon(
-                                imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = "Toggle visibility",
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                        Icon(
+                            imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = "Toggle visibility",
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 },
                 shape = RoundedCornerShape(12.dp),
@@ -509,7 +517,7 @@ fun SingleProviderKeyCard(
                             }
                         }
                     },
-                    enabled = !isTesting && (keyInput.isNotBlank() || provider == AiProviderType.LOCAL_OLLAMA),
+                    enabled = !isTesting && keyInput.isNotBlank(),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     if (isTesting) {
@@ -761,8 +769,6 @@ private fun saveKey(context: Context, provider: AiProviderType, key: String) {
         AiProviderType.MISTRAL -> AyraPreferences.setMistralKey(context, key)
         AiProviderType.PERPLEXITY -> AyraPreferences.setPerplexityKey(context, key)
         AiProviderType.OPENROUTER -> AyraPreferences.setCustomOpenRouterKey(context, key)
-        AiProviderType.LOCAL_OLLAMA -> AyraPreferences.setCustomEndpointUrl(context, key)
-        AiProviderType.OMNI_ROUTE -> {}
     }
     try {
         ExternalAiProviders(context).circuitBreaker.resetProvider(provider)

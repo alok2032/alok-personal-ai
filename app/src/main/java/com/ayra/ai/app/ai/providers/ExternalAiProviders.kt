@@ -28,7 +28,9 @@ enum class AiProviderType(val id: String, val displayName: String, val defaultBa
     XAI("xai", "xAI Grok", "https://api.x.ai/v1/"),
     MISTRAL("mistral", "Mistral AI", "https://api.mistral.ai/v1/"),
     PERPLEXITY("perplexity", "Perplexity AI", "https://api.perplexity.ai/"),
-    OPENROUTER("openrouter", "OpenRouter", "https://openrouter.ai/api/v1/")
+    OPENROUTER("openrouter", "OpenRouter", "https://openrouter.ai/api/v1/"),
+    LOCAL_OLLAMA("local_ollama", "Local Ollama / LAN", "http://10.0.2.2:11434/v1/"),
+    OMNI_ROUTE("omniroute", "OmniRoute Ensemble ⚡👑", "")
 }
 
 data class AiModelInfo(
@@ -154,9 +156,9 @@ class ExternalAiProviders(private val context: Context? = null) {
             AiModelInfo("qwen/qwen-2.5-72b-instruct", "Qwen 2.5 72B Instruct 🐉", AiProviderType.OPENROUTER, "Top multilingual, STEM & reasoning model", "128k tokens", false, false, false),
             AiModelInfo("qwen/qwen-2.5-coder-32b-instruct", "Qwen 2.5 Coder 32B 💻", AiProviderType.OPENROUTER, "Elite coding and bug-fixing specialist", "128k tokens", false, false, false),
 
-            // Local Ollama & Qwen 3.8 Uncensored (from Wassimyounes01/qwen38-uncensored)
-            AiModelInfo("orcarouter/Qwen3.8-27B-Uncensored:q4_k_m", "Qwen 3.8 27B Uncensored 🔓", AiProviderType.LOCAL_OLLAMA, "Abliterated 27B weights — zero refusal answers to any question", "262k tokens", true, true, true),
-            AiModelInfo("qwen3.8:27b-uncensored", "Qwen 3.8 Uncensored (Ollama Tag) 🔓", AiProviderType.LOCAL_OLLAMA, "Abliterated Qwen 3.8 27B serving tag on Ollama", "8k tokens", false, true, false),
+            // Local Ollama & Qwen 3.8 Uncensored
+            AiModelInfo("orcarouter/Qwen3.8-27B-Uncensored:q4_k_m", "Qwen 3.8 27B Uncensored 🔓", AiProviderType.LOCAL_OLLAMA, "Zero refusal answers to any question", "262k tokens", true, true, true),
+            AiModelInfo("qwen3.8:27b-uncensored", "Qwen 3.8 Uncensored (Ollama Tag) 🔓", AiProviderType.LOCAL_OLLAMA, "Qwen 3.8 27B serving tag on Ollama", "8k tokens", false, true, false),
             AiModelInfo("llama3.3", "Local Ollama / LM Studio 🏠", AiProviderType.LOCAL_OLLAMA, "Zero-cloud private local LLM running on your device/LAN", "8k+ tokens", false, false, false)
         )
     }
@@ -221,7 +223,22 @@ class ExternalAiProviders(private val context: Context? = null) {
         }
 
         // 1. If explicit provider preferred and configured, try it first
-        if (preferredProvider != null && preferredProvider != AiProviderType.OMNI_ROUTE) {
+        if (preferredProvider == AiProviderType.OMNI_ROUTE) {
+            try {
+                val omniEngine = context?.let { com.ayra.ai.app.ai.omniroute.OmniRouteEngine(it) }
+                if (omniEngine != null) {
+                    val omniResp = omniEngine.executeRoute(prompt, "omniroute", imageBase64)
+                    if (omniResp.text.isNotBlank()) {
+                        return@withContext ProviderResponse(
+                            text = omniResp.text,
+                            modelUsed = omniResp.modelUsed ?: "OmniRoute Ensemble ⚡👑",
+                            provider = AiProviderType.OMNI_ROUTE,
+                            latencyMs = System.currentTimeMillis() - startTime
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+        } else if (preferredProvider != null) {
             val key = getProviderKey(preferredProvider)
             if ((key.isNotBlank() || preferredProvider == AiProviderType.LOCAL_OLLAMA) && circuitBreaker.canExecute(preferredProvider)) {
                 try {
@@ -268,16 +285,16 @@ class ExternalAiProviders(private val context: Context? = null) {
             }
         }
 
-        // 3. Fallback: OmniRoute / Gemini CLI / Qwen Uncensored Direct
+        // 3. Fallback: Gemini CLI Direct / Qwen Uncensored / Free Keyless Cloud Inference
         try {
             val geminiKey = context?.let { AyraPreferences.getEffectiveGeminiKey(it) } ?: ""
             if (geminiKey.isNotBlank()) {
                 val cli = com.ayra.ai.app.ai.gemini.GeminiCliEngine(context)
                 val cliRes = cli.executeCliQuery(prompt, systemDirective = systemPrompt, imageBase64 = turns.firstOrNull { it.imageBase64 != null }?.imageBase64)
-                if (cliRes != null && cliRes.text.isNotBlank()) {
+                if (cliRes.text.isNotBlank()) {
                     return@withContext ProviderResponse(
                         text = cliRes.text,
-                        modelUsed = "Gemini 2.5 Flash (Direct CLI) ⚡",
+                        modelUsed = cliRes.modelUsed ?: "Gemini 2.5 Flash (Direct CLI) ⚡",
                         provider = AiProviderType.GEMINI,
                         latencyMs = System.currentTimeMillis() - startTime
                     )
@@ -291,11 +308,23 @@ class ExternalAiProviders(private val context: Context? = null) {
                 if (qwenRes.text.isNotBlank()) {
                     return@withContext ProviderResponse(
                         text = qwenRes.text,
-                        modelUsed = "Qwen 3.8 Uncensored 🔓",
+                        modelUsed = qwenRes.modelUsed ?: "Qwen 3.8 Uncensored 🔓",
                         provider = AiProviderType.LOCAL_OLLAMA,
                         latencyMs = System.currentTimeMillis() - startTime
                     )
                 }
+            }
+        } catch (_: Exception) {}
+
+        try {
+            val fallbackText = queryPollinationsFallback(prompt, systemPrompt)
+            if (fallbackText.isNotBlank()) {
+                return@withContext ProviderResponse(
+                    text = fallbackText,
+                    modelUsed = "Ayra Fast Cloud Fallback ⚡",
+                    provider = AiProviderType.GEMINI,
+                    latencyMs = System.currentTimeMillis() - startTime
+                )
             }
         } catch (_: Exception) {}
 
@@ -324,11 +353,7 @@ class ExternalAiProviders(private val context: Context? = null) {
                 streamOpenAiCompatible(provider, turns, model, key, this)
             }
             AiProviderType.ANTHROPIC -> streamAnthropic(turns, model, key, this)
-            else -> {
-                // Keyless fallback doesn't support SSE; emit full text
-                val fullText = queryPollinationsFallback(prompt, systemPrompt)
-                emit(fullText)
-            }
+            AiProviderType.OMNI_ROUTE -> streamGemini(turns, "gemini-2.0-flash", key, this)
         }
     }.flowOn(Dispatchers.IO)
 
@@ -351,7 +376,7 @@ class ExternalAiProviders(private val context: Context? = null) {
             AiProviderType.OMNI_ROUTE -> {
                 val geminiKey = context?.let { AyraPreferences.getEffectiveGeminiKey(it) } ?: ""
                 if (geminiKey.isNotBlank()) {
-                    callGemini(turns, "gemini-2.5-flash", geminiKey, withSearchGrounding)
+                    callGemini(turns, "gemini-2.0-flash", geminiKey, withSearchGrounding)
                 } else {
                     throw ProviderError.NoKeyConfigured(AiProviderType.GEMINI)
                 }
@@ -973,7 +998,9 @@ class ExternalAiProviders(private val context: Context? = null) {
                 else Pair(AiProviderType.OPENROUTER, "qwen/qwen-2.5-coder-32b-instruct")
             }
             AiRoutingMode.PRIVACY_LOCAL -> {
-                Pair(AiProviderType.LOCAL_OLLAMA, "llama3.3")
+                if (configured.contains(AiProviderType.LOCAL_OLLAMA)) Pair(AiProviderType.LOCAL_OLLAMA, "llama3.3")
+                else if (configured.contains(AiProviderType.DEEPSEEK)) Pair(AiProviderType.DEEPSEEK, "deepseek-chat")
+                else Pair(AiProviderType.OPENROUTER, "meta-llama/llama-3.3-70b-instruct")
             }
             AiRoutingMode.COST_EFFICIENT -> {
                 if (configured.contains(AiProviderType.GEMINI)) Pair(AiProviderType.GEMINI, "gemini-2.5-flash")
@@ -1037,9 +1064,9 @@ class ExternalAiProviders(private val context: Context? = null) {
                     }
                 }
                 AiProviderType.OPENAI, AiProviderType.DEEPSEEK, AiProviderType.XAI,
-                AiProviderType.MISTRAL, AiProviderType.PERPLEXITY, AiProviderType.OPENROUTER, AiProviderType.LOCAL_OLLAMA -> {
+                AiProviderType.MISTRAL, AiProviderType.PERPLEXITY, AiProviderType.OPENROUTER -> {
                     val baseUrl = getBaseUrlForProvider(provider)
-                    val url = if (provider == AiProviderType.LOCAL_OLLAMA && !baseUrl.contains("/v1/")) "${baseUrl}api/tags" else "${baseUrl}models"
+                    val url = "${baseUrl}models"
                     val reqBuilder = Request.Builder().url(url)
                     if (key.isNotBlank()) {
                         reqBuilder.addHeader("Authorization", "Bearer $key")
