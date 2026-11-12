@@ -58,7 +58,7 @@ object AiMediaPromptSynthesizer {
      */
     fun synthesizeVisualPrompt(rawPrompt: String, type: String = "IMAGE", context: android.content.Context? = null): Pair<String, String> {
         val cleanSubject = extractCleanSubject(rawPrompt)
-        val geminiKey = context?.let { com.ayra.ai.app.data.AyraPreferences.getEffectiveGeminiKey(it) }?.ifBlank { BuildConfig.GEMINI_API_KEY } ?: BuildConfig.GEMINI_API_KEY
+        val geminiKey = context?.let { com.ayra.ai.app.data.AyraPreferences.getEffectiveGeminiKey(it) } ?: ""
 
         // 1. Try Gemini API prompt expansion if key available
         if (geminiKey.isNotBlank()) {

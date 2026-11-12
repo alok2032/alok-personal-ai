@@ -2,7 +2,6 @@ package com.ayra.ai.app.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.ayra.ai.app.BuildConfig
 import com.ayra.ai.app.security.SecureKeyStore
 
 /**
@@ -24,15 +23,13 @@ object AyraPreferences {
     // --- Provider Keys (Hardware Keystore Encrypted) ---
 
     fun getEffectiveGeminiKey(context: Context?): String {
-        if (context == null) return BuildConfig.GEMINI_API_KEY
-        val secureKey = SecureKeyStore.getSecret(context, SecureKeyStore.KEY_GEMINI)
-        return if (secureKey.isNotBlank()) secureKey else BuildConfig.GEMINI_API_KEY
+        if (context == null) return ""
+        return SecureKeyStore.getSecret(context, SecureKeyStore.KEY_GEMINI)
     }
 
     fun getEffectiveOpenRouterKey(context: Context?): String {
-        if (context == null) return BuildConfig.OPENROUTER_API_KEY
-        val secureKey = SecureKeyStore.getSecret(context, SecureKeyStore.KEY_OPENROUTER)
-        return if (secureKey.isNotBlank()) secureKey else BuildConfig.OPENROUTER_API_KEY
+        if (context == null) return ""
+        return SecureKeyStore.getSecret(context, SecureKeyStore.KEY_OPENROUTER)
     }
 
     fun setCustomGeminiKey(context: Context, key: String) {

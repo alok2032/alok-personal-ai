@@ -65,6 +65,10 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.VpnKey
+import android.content.Intent
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -74,7 +78,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.ayra.ai.app.data.AyraPreferences
 import androidx.compose.ui.platform.testTag
 import com.ayra.ai.app.ui.components.ControlCenterSheet
 import com.ayra.ai.app.vpn.AyraVpnPrivacyController
@@ -1425,7 +1431,7 @@ fun ChatScreen(
                 onDismissRequest = { viewModel.setShowKeyOnboarding(false) },
                 icon = {
                     Icon(
-                        imageVector = Icons.Default.Key,
+                        imageVector = Icons.Default.VpnKey,
                         contentDescription = null,
                         tint = NeonCyan,
                         modifier = Modifier.size(32.dp)

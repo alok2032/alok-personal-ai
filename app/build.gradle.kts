@@ -19,22 +19,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        val envFile = rootProject.file(".env")
-        val envProps = Properties()
-        if (envFile.exists()) {
-            FileInputStream(envFile).use { stream ->
-                envProps.load(stream)
-            }
-        }
-        val geminiKey = envProps.getProperty("GEMINI_API_KEY")
-            ?: System.getenv("GEMINI_API_KEY")
-            ?: ""
-        val openRouterKey = envProps.getProperty("OPENROUTER_API_KEY")
-            ?: System.getenv("OPENROUTER_API_KEY")
-            ?: ""
-        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
-        buildConfigField("String", "OPENROUTER_API_KEY", "\"$openRouterKey\"")
     }
 
     signingConfigs {
@@ -111,6 +95,7 @@ dependencies {
     implementation(libs.accompanist.permissions)
 
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation("org.json:json:20240303")
 
     debugImplementation(libs.androidx.compose.ui.tooling)

@@ -28,9 +28,7 @@ enum class AiProviderType(val id: String, val displayName: String, val defaultBa
     XAI("xai", "xAI Grok", "https://api.x.ai/v1/"),
     MISTRAL("mistral", "Mistral AI", "https://api.mistral.ai/v1/"),
     PERPLEXITY("perplexity", "Perplexity AI", "https://api.perplexity.ai/"),
-    OPENROUTER("openrouter", "OpenRouter", "https://openrouter.ai/api/v1/"),
-    LOCAL_OLLAMA("local_ollama", "Local Ollama / LM Studio", "http://10.0.2.2:11434/v1/"),
-    OMNI_ROUTE("omniroute", "OmniRoute Intelligent Matrix", "https://api.omniroute.ai/")
+    OPENROUTER("openrouter", "OpenRouter", "https://openrouter.ai/api/v1/")
 }
 
 data class AiModelInfo(
